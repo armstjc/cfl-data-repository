@@ -33,7 +33,7 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: run Python Script
         run: |
-          python get_rosters.py
+          python get_cfl_rosters.py
 
       - uses: xresloader/upload-to-github-release@main
         env:
