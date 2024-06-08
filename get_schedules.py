@@ -48,14 +48,15 @@ def get_cfl_schedules(season: int) -> pd.DataFrame:
 if __name__ == "__main__":
     now = datetime.now()
     now_timestamp = now.isoformat()
-    timestamp_json = f"{{\"timestamp\":\"{now_timestamp}\"}}"
-    with open("schedule/timestamp.json", "w+") as f:
-        f.write(timestamp_json)
 
     try:
         os.mkdir("schedule")
     except FileExistsError:
         logging.info("`./schedule` already exists.")
+
+    timestamp_json = f"{{\"timestamp\":\"{now_timestamp}\"}}"
+    with open("schedule/timestamp.json", "w+") as f:
+        f.write(timestamp_json)
 
     for i in tqdm(range(now.year-1, now.year+1)):
         df = get_cfl_schedules(i)

@@ -2,6 +2,7 @@ import json
 import logging
 # import os
 from datetime import datetime
+import os
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,16 @@ def parse_cfl_player_url(player_url: str) -> int:
 
 def get_cfl_rosters():
     """ """
+    try:
+        os.mkdir("rosters")
+    except FileExistsError:
+        logging.info("`./rosters` already exists.")
+
+    try:
+        os.mkdir("rosters/weekly")
+    except FileExistsError:
+        logging.info("`./weekly` already exists.")
+
     now = datetime.now()
     season = now.year
     url = (

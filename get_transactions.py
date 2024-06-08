@@ -116,14 +116,15 @@ def get_cfl_transactions(season: int) -> pd.DataFrame:
 if __name__ == "__main__":
     now = datetime.now()
     now_timestamp = now.isoformat()
-    timestamp_json = f"{{\"timestamp\":\"{now_timestamp}\"}}"
-    with open("transactions/timestamp.json", "w+") as f:
-        f.write(timestamp_json)
 
     try:
         os.mkdir("transactions")
     except FileExistsError:
         logging.info("`./transactions` already exists.")
+
+    timestamp_json = f"{{\"timestamp\":\"{now_timestamp}\"}}"
+    with open("transactions/timestamp.json", "w+") as f:
+        f.write(timestamp_json)
 
     # for i in range(1990, 2000):
     #     df = get_cfl_transactions(i)
