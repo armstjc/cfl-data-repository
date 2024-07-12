@@ -1,9 +1,8 @@
-name: Update CFL Schedules
+name: Update CFL Stats
 on:
   schedule:
-    - cron: "5 0 * * *"
-    - cron: "0,20,40 10-23,0-4 * 6-11 4-6,0"
-    - cron: "0 10-23,0-4 * 6-11 1"
+    - cron: "55 0 * * *"
+    - cron: "5,35 20-23,0-4 * 6-11 *"
   push:
     branches: [main]
   # pull_request:
@@ -35,15 +34,26 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
       - name: run Python Script
         run: |
-          python get_schedules.py
+          python get_cfl_game_stats.py
 
       - uses: xresloader/upload-to-github-release@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          file: "schedule/*.*"
+          file: "player_stats/game_stats/*.*"
           branches: "main"
           #update_latest_release: true
           overwrite: true
           verbose: true
-          default_release_name: "CFL Schedules"
+          default_release_name: "CFL Player Game Stats"
+      - uses: xresloader/upload-to-github-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: "team_stats/game_stats/*.*"
+          branches: "main"
+          #update_latest_release: true
+          overwrite: true
+          verbose: true
+          default_release_name: "CFL Team Game Stats"
+  
