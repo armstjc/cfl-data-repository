@@ -48,8 +48,8 @@ def get_cfl_schedules(season: int) -> pd.DataFrame:
             "eventStatus_name": "string",
             "eventStatus_period": "uint8",
         },
-        # errors="ignore",
-        errors="raise"
+        errors="ignore",
+        # errors="raise"
     )
     # print(schedule_df.memory_usage(index=False))
     # print(schedule_df.dtypes)

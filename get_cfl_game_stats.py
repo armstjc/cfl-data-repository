@@ -1233,4 +1233,4 @@ if __name__ == "__main__":
         print(f"Getting {i} player game stats.")
         print(get_cfl_player_game_stats(i))
         print(f"Getting {i} team game stats.")
-        # print(get_cfl_team_game_stats(i))
+        print(get_cfl_team_game_stats(i))
