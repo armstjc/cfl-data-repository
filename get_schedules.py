@@ -32,16 +32,27 @@ def get_cfl_schedules(season: int) -> pd.DataFrame:
     response = requests.get(url=url, headers=headers)
     json_data = json.loads(response.text)
     schedule_df = pd.json_normalize(json_data)
-    schedule_df["startDate"] = pd.to_datetime(schedule_df["startDate"], utc=True).dt.tz_convert("UTC")
+    schedule_df["startDate"] = pd.to_datetime(
+        schedule_df["startDate"], utc=True
+    ).dt.tz_convert("UTC")
     # schedule_df = schedule_df.infer_objects()
-    schedule_df.astype(
+    print()
+    # print(schedule_df.memory_usage(index=False))
+    schedule_df = schedule_df.astype(
         {
             "eventId": "uint16",
             "fixtureId": "uint64",
             # "startDate": "datetime64[ns]",
+            "eventTypeId": "uint8",
+            "eventStatus_eventStatusId": "uint8",
+            "eventStatus_name": "string",
+            "eventStatus_period": "uint8",
         },
-        # errors="ignore"
+        # errors="ignore",
+        errors="raise"
     )
+    # print(schedule_df.memory_usage(index=False))
+    # print(schedule_df.dtypes)
     schedule_df["week"] = pd.to_numeric(schedule_df["week"], errors="coerce")
     schedule_df["day_of_week"] = schedule_df["startDate"].dt.day_name()
     try:

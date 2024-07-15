@@ -2,7 +2,7 @@ name: Update CFL Stats
 on:
   schedule:
     - cron: "55 0 * * *"
-    - cron: "5,35 20-23,0-4 * 6-11 *"
+    - cron: "5 20-23,0-4 * 6-11 *"
   push:
     branches: [main]
   # pull_request:
@@ -56,4 +56,3 @@ jobs:
           overwrite: true
           verbose: true
           default_release_name: "CFL Team Game Stats"
-  
