@@ -868,6 +868,7 @@ def get_cfl_player_game_stats(season: int) -> pd.DataFrame:
     if len(stats_df_arr) > 0:
         stats_df = pd.concat(stats_df_arr, ignore_index=True)
         stats_df["last_updated"] = now.isoformat()
+        stats_df["season"] = season
 
         stats_df.to_csv(
             f"player_stats/game_stats/{season}_cfl_player_game_stats.csv",
