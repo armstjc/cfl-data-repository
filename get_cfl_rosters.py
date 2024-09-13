@@ -248,6 +248,7 @@ def get_stats_crew_cfl_rosters(season: int):
 
 
 if __name__ == "__main__":
+    now = datetime.now()
     get_cfl_rosters()
     # print(get_cfl_rosters())
-    get_stats_crew_cfl_rosters()
+    get_stats_crew_cfl_rosters(now.year)
