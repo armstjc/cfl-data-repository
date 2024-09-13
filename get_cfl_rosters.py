@@ -140,6 +140,16 @@ def get_cfl_rosters():
 
 def get_stats_crew_cfl_rosters(season: int):
     """ """
+    try:
+        os.mkdir("rosters")
+    except FileExistsError:
+        logging.info("`./rosters` already exists.")
+
+    try:
+        os.mkdir("rosters/weekly")
+    except FileExistsError:
+        logging.info("`./weekly` already exists.")
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
