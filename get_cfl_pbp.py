@@ -110,6 +110,9 @@ def parser(
     away_team_id: int,
     home_team_abv: str,
     home_team_id: int,
+    home_points: int,
+    away_points: int,
+    is_home_opening_kickoff: bool = False
 ) -> pd.DataFrame:
     """ """
     pbp_df = pd.DataFrame()
@@ -118,7 +121,7 @@ def parser(
 
     posteam = ""
     defteam = ""
-    home_opening_kickoff = False
+    home_opening_kickoff = is_home_opening_kickoff
     yardline_100 = 0
     # In the CFL, both sides get 2 timeouts per half, instead of 3.
     # https://cfldb.ca/rulebook/conduct-of-the-game/starting-and-timing/
@@ -126,8 +129,8 @@ def parser(
     away_timeouts_remaining = 2
     posteam_timeouts_remaining = 2
     defteam_timeouts_remaining = 2
-    total_home_score = 0
-    total_away_score = 0
+    total_home_score = total_home_score
+    total_away_score = total_away_score
     posteam_score = 0
     defteam_score = 0
     score_differential = 0
@@ -8677,7 +8680,7 @@ def parser(
         pbp_df_arr.append(temp_df)
 
     pbp_df = pd.concat(pbp_df_arr, ignore_index=True)
-    return pbp_df
+    return pbp_df, home_opening_kickoff, total_home_score, total_away_score
 
 
 def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
@@ -8963,9 +8966,10 @@ def get_cfl_season_pbp_data(season: int) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
-
-    get_cfl_season_pbp_data(2023)
-    get_cfl_season_pbp_data(2024)
+    now = datetime.now()
+    for i in range(now.year -1, now.year + 1):
+        get_cfl_season_pbp_data(now.year)
+    # get_cfl_season_pbp_data(2023)
     # df = get_cfl_pbp_data(9888990, 2023)
     # df.to_csv("test.csv")
     # print(get_player_chain(2023, "CGY", "WPG"))

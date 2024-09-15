@@ -173,7 +173,10 @@ def get_stats_crew_cfl_rosters(season: int):
 
     for url in base_urls_arr:
         url_str = url.get("href")
-        if "roster" in url_str:
+        if (
+            "roster" in url_str and
+            "statscrew.com" in url_str
+        ):
             urls_arr.append(url_str)
 
     for url in tqdm(urls_arr):
