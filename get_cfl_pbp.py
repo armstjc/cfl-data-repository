@@ -110,8 +110,8 @@ def parser(
     away_team_id: int,
     home_team_abv: str,
     home_team_id: int,
-    home_points: int,
-    away_points: int,
+    total_home_score: int,
+    total_away_score: int,
     is_home_opening_kickoff: bool = False
 ) -> pd.DataFrame:
     """ """
@@ -129,8 +129,8 @@ def parser(
     away_timeouts_remaining = 2
     posteam_timeouts_remaining = 2
     defteam_timeouts_remaining = 2
-    total_home_score = total_home_score
-    total_away_score = total_away_score
+    # total_home_score = home_points
+    # total_away_score = away_points
     posteam_score = 0
     defteam_score = 0
     score_differential = 0
@@ -144,10 +144,6 @@ def parser(
         # Fixes an issue that would otherwise completely break the regex code.
         play["description"] = play["description"].replace("Ottawa", "OTT")
         play["description"] = play["description"].replace("ottawa", "OTT")
-
-        posteam_score = posteam_score_post
-        defteam_score = defteam_score_post
-        score_differential = score_differential_post
 
         kicker_player_name = ""
         kickoff_returner_player_name = ""
@@ -280,13 +276,33 @@ def parser(
         is_kickoff_fair_catch = False
         is_successful_play = False
 
+        # if posteam == home_team_abv:
+        #     posteam_score = total_home_score
+        #     defteam_score = total_away_score
+        # elif posteam == away_team_abv:
+        #     posteam_score = total_away_score
+        #     defteam_score = total_home_score
+
+        # posteam_score = posteam_score_post
+        # defteam_score = defteam_score_post
+        # score_differential = score_differential_post
+
         if play["teamId"] == home_team_id:
             posteam = home_team_abv
             defteam = away_team_abv
+            posteam_score = total_home_score
+            posteam_score_post = posteam_score
+            defteam_score = total_away_score
+            posteam_score_post = posteam_score
+            defteam_score_post = defteam_score
             posteam_type = "home"
         elif play["teamId"] == away_team_id:
             posteam = away_team_abv
             defteam = home_team_abv
+            posteam_score = total_away_score
+            defteam_score = total_home_score
+            posteam_score_post = posteam_score
+            defteam_score_post = defteam_score
             posteam_type = "away"
         else:
             raise ValueError(
@@ -622,14 +638,16 @@ def parser(
                 passer_player_name = play_arr[0]
             elif "to" not in play["description"].lower():
                 play_arr = re.findall(
-                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass incomplete " +
-                    r"([a-zA-Z]+) ([a-zA-Z]+)",
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass incomplete ([a-zA-Z]+)( [a-zA-Z]+)?",
                     play["description"]
                 )
 
                 passer_player_name = play_arr[0][0]
                 pass_length = play_arr[0][1]
-                pass_location = play_arr[0][2]
+                try:
+                    pass_location = play_arr[0][2]
+                except Exception:
+                    pass_location = None
             elif (
                 "right" not in play["description"].lower() and
                 "middle" not in play["description"].lower() and
@@ -646,7 +664,8 @@ def parser(
                 receiver_player_name = play_arr[0][2]
                 del play_arr
             elif (
-                "the previous play is under review" in play["description"].lower()
+                "the previous play is under review"
+                in play["description"].lower()
             ):
                 is_replay_or_challenge = True
 
@@ -2880,6 +2899,57 @@ def parser(
             elif (
                 " for 0 yards to the" in play["description"].lower() and
                 "fumbled by" in play["description"].lower() and
+                "forced by" not in play["description"].lower() and
+                "return" in play["description"].lower()
+            ):
+                is_fumble = True
+                is_fumble_forced = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) rush ([a-zA-Z]+) for ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;\,]+)\)",
+                    play["description"]
+                )
+                rusher_player_name = play_arr[0][0]
+                run_location = play_arr[0][1]
+                rushing_yards = int(play_arr[0][2])
+                yards_gained = rushing_yards
+                fumbled_1_team = posteam
+                fumbled_1_player_name = play_arr[0][4]
+                # forced_fumble_player_1_team = defteam
+                # forced_fumble_player_1_player_name = play_arr[0][6]
+
+                fumble_recovery_1_team = play_arr[0][6]
+                fumble_recovery_1_player_name = play_arr[0][7]
+                fumble_recovery_1_yards = int(play_arr[0][10])
+
+                if fumble_recovery_1_team == posteam:
+                    solo_tackle_1_team = defteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    is_fumble_lost = True
+                    solo_tackle_1_team = posteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][12]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+
+            elif (
+                " for 0 yards to the" in play["description"].lower() and
+                "fumbled by" in play["description"].lower() and
                 "forced by" not in play["description"].lower()
             ):
                 is_fumble = True
@@ -4001,6 +4071,15 @@ def parser(
                 raise ValueError(
                     f"Unhandled play {play}"
                 )
+            elif "(" not in play["description"].lower():
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) rush ([a-zA-Z]+) for ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                rusher_player_name = play_arr[0][0]
+                run_location = play_arr[0][1]
+                rushing_yards = int(play_arr[0][2])
+                yards_gained = rushing_yards
             else:
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) rush ([a-zA-Z]+) for " +
@@ -6605,6 +6684,21 @@ def parser(
                     raise ValueError(
                         f"Unhandled play {play}"
                     )
+            elif (
+                "recovered by" in play["description"].lower() and
+                "blocked by" in play["description"].lower() and
+                "yards to the penalty" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) blocked by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                blocked_player_name = play_arr[0][3]
+                fumble_recovery_1_team = play_arr[0][4]
+                fumble_recovery_1_player_name = play_arr[0][5]
+                fumble_recovery_1_yards = play_arr[0][8]
             elif "recovered by" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
@@ -6673,6 +6767,21 @@ def parser(
                 return_yards = int(play_arr[0][4])
                 td_team = defteam
                 td_player_name = punt_returner_player_name
+            elif (
+                "out of bounds" in play["description"].lower() and
+                "return" in play["description"].lower() and
+                "hold, return" not in play["description"].lower()
+            ):
+                is_punt_out_of_bounds = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+), out of bounds at ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][3]
+                return_yards = int(play_arr[0][4])
+
             elif "out of bounds" in play["description"].lower():
                 is_punt_out_of_bounds = True
                 play_arr = re.findall(
@@ -8367,6 +8476,19 @@ def parser(
 
         score_differential_post = posteam_score_post - defteam_score_post
 
+        if play["teamId"] == home_team_id:
+            total_home_score = posteam_score_post
+            total_away_score = defteam_score_post
+        elif play["teamId"] == away_team_id:
+            total_home_score = defteam_score_post
+            total_away_score = posteam_score_post
+
+        # if posteam == home_team_abv:
+        #     total_home_score = posteam_score_post
+        #     total_away_score = defteam_score_post
+        # elif posteam == away_team_abv:
+        #     total_home_score = defteam_score_post
+        #     total_away_score = posteam_score_post
 
         temp_df = pd.DataFrame(
             {
@@ -8678,6 +8800,9 @@ def parser(
             index=[0],
         )
         pbp_df_arr.append(temp_df)
+        # posteam_score = posteam_score_post
+        # defteam_score = defteam_score_post
+        # score_differential = score_differential_post
 
     pbp_df = pd.concat(pbp_df_arr, ignore_index=True)
     return pbp_df, home_opening_kickoff, total_home_score, total_away_score
@@ -8785,6 +8910,8 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
     played_phases = []
     away_team_abv = ""
     home_team_abv = ""
+    home_points = 0
+    away_points = 0
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
@@ -8821,44 +8948,52 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
 
         if "Q1" in json_data["playByPlayInfo"]:
             logging.info("Parsing Q1 play-by-play data.")
-            quarter_df = parser(
+            quarter_df, home_opening_kickoff, home_points, away_points = parser(
                 pbp_data=json_data["playByPlayInfo"]["Q1"],
                 # quarter_num=1,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
-                away_team_id=away_team_id
+                away_team_id=away_team_id,
+                total_home_score=home_points,
+                total_away_score=away_points
             )
-            home_opening_kickoff = quarter_df["home_opening_kickoff"][0]
+            home_opening_kickoff= quarter_df["home_opening_kickoff"][0]
         elif "Q2" in json_data["playByPlayInfo"]:
             logging.info("Parsing Q2 play-by-play data.")
-            quarter_df = parser(
+            quarter_df, home_opening_kickoff, home_points, away_points = parser(
                 pbp_data=json_data["playByPlayInfo"]["Q2"],
                 # quarter_num=2,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
-                away_team_id=away_team_id
+                away_team_id=away_team_id,
+                total_home_score=home_points,
+                total_away_score=away_points
             )
         elif "Q3" in json_data["playByPlayInfo"]:
             logging.info("Parsing Q3 play-by-play data.")
-            quarter_df = parser(
+            quarter_df, home_opening_kickoff, home_points, away_points = parser(
                 pbp_data=json_data["playByPlayInfo"]["Q3"],
                 # quarter_num=3,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
-                away_team_id=away_team_id
+                away_team_id=away_team_id,
+                total_home_score=home_points,
+                total_away_score=away_points
             )
         elif "Q4" in json_data["playByPlayInfo"]:
             logging.info("Parsing Q4 play-by-play data.")
-            quarter_df = parser(
+            quarter_df, home_opening_kickoff, home_points, away_points = parser(
                 pbp_data=json_data["playByPlayInfo"]["Q4"],
                 # quarter_num=4,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
-                away_team_id=away_team_id
+                away_team_id=away_team_id,
+                total_home_score=home_points,
+                total_away_score=away_points
             )
         pbp_df_arr.append(quarter_df)
         del quarter_df
@@ -8880,13 +9015,15 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
 
         if "OT" in json_data["playByPlayInfo"]:
             logging.info("Parsing OT play-by-play data.")
-            quarter_df = parser(
+            quarter_df, home_opening_kickoff, home_points, away_points = parser(
                 pbp_data=json_data["playByPlayInfo"]["OT"],
                 # quarter_num=5,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
-                away_team_id=away_team_id
+                away_team_id=away_team_id,
+                total_home_score=home_points,
+                total_away_score=away_points
             )
             pbp_df_arr.append(quarter_df)
             del quarter_df
@@ -8967,9 +9104,9 @@ def get_cfl_season_pbp_data(season: int) -> pd.DataFrame:
 
 if __name__ == "__main__":
     now = datetime.now()
-    for i in range(now.year -1, now.year + 1):
-        get_cfl_season_pbp_data(now.year)
-    # get_cfl_season_pbp_data(2023)
+    for i in range(now.year, now.year + 1):
+        get_cfl_season_pbp_data(i)
+    # get_cfl_season_pbp_data(now.year)
     # df = get_cfl_pbp_data(9888990, 2023)
     # df.to_csv("test.csv")
-    # print(get_player_chain(2023, "CGY", "WPG"))
+
