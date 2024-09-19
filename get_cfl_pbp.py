@@ -6770,7 +6770,8 @@ def parser(
             elif (
                 "out of bounds" in play["description"].lower() and
                 "return" in play["description"].lower() and
-                "hold, return" not in play["description"].lower()
+                "hold, return" not in play["description"].lower() and
+                "illegal block, return" not in play["description"].lower()
             ):
                 is_punt_out_of_bounds = True
                 play_arr = re.findall(
