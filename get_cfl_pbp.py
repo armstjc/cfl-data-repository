@@ -1204,6 +1204,50 @@ def parser(
                         f"Unhandled play {play}"
                     )
                 punt_end_yl = get_yardline(play_arr[0][12], posteam)
+            elif (
+                "caught at" in play["description"].lower() and
+                (
+                    "left" not in play["description"].lower() and
+                    "right" not in play["description"].lower() and
+                    "middle" not in play["description"].lower()
+                )
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete " +
+                    r"([a-zA-Z]+) to " +
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) " +
+                    r"caught at ([0-9a-zA-Z\-]+), for ([\-0-9]+) yard[s]? " +
+                    r"to the ([0-9a-zA-Z\-]+) " +
+                    r"\(([a-zA-Z0-9\#\.\-\s\'\;\,]+)\)",
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                pass_length = play_arr[0][1]
+                # pass_location = play_arr[0][2]
+                receiver_player_name = play_arr[0][2]
+                temp_ay = get_yardline(play_arr[0][3], posteam)
+                air_yards = yardline_100 - temp_ay
+                passing_yards = int(play_arr[0][4])
+                yards_gained = passing_yards
+                yards_after_catch = passing_yards - air_yards
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][6]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
             elif "caught at" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete " +
@@ -8933,9 +8977,21 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
         time.sleep(1)
         json_data = json.loads(response.text)
         json_data = json_data["data"]
-        with open("test.json", "w+") as f:
-            f.write(json.dumps(json_data, indent=4))
-        played_phases = json_data["matchInfo"]["playedPhases"]
+        # with open("test.json", "w+") as f:
+        #     f.write(json.dumps(json_data, indent=4))
+        try:
+            played_phases = json_data["matchInfo"]["playedPhases"]
+        except Exception:
+            logging.warning(
+                f"Issue found when attempting to parse {fixture_id}. " +
+                "Attempting re-download."
+            )
+            time.sleep(15)
+            response = requests.get(url=url, headers=headers)
+            json_data = json.loads(response.text)
+            json_data = json_data["data"]
+            played_phases = json_data["matchInfo"]["playedPhases"]
+
         away_team_abv = json_data["matchInfo"]["awayTeam"]["details"][
             "abbreviation"
         ]
