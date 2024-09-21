@@ -8849,7 +8849,10 @@ def parser(
         # defteam_score = defteam_score_post
         # score_differential = score_differential_post
 
-    pbp_df = pd.concat(pbp_df_arr, ignore_index=True)
+    if len(pbp_df_arr) > 0:
+        pbp_df = pd.concat(pbp_df_arr, ignore_index=True)
+    else:
+        pbp_df = pd.DataFrame()
     return pbp_df, home_opening_kickoff, total_home_score, total_away_score
 
 
