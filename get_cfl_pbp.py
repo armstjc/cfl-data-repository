@@ -346,7 +346,12 @@ def parser(
                 )
             yrdln = down_and_distance_arr[0][2]
             # del down_and_distance_arr
-            side_of_field = re.findall("([a-zA-Z]+)", yrdln)[0]
+            try:
+                side_of_field = re.findall("([a-zA-Z]+)", yrdln)[0]
+            except Exception:
+                # Yes this is probably bad.
+                # No, there isn't a better solution.
+                side_of_field = posteam
             yardline_100 = get_yardline(yrdln, posteam)
             if yds_to_go == yardline_100:
                 is_goal_to_go = True
@@ -4978,6 +4983,31 @@ def parser(
                     raise ValueError(
                         f"Unhandled play {play}"
                     )
+            elif (
+                "pass" in play["description"].lower() and
+                "incomplete" in play["description"].lower() and
+                "for loss of" in play["description"].lower() and
+                "thrown to" in play["description"].lower()
+            ):
+                is_pass = True
+                is_incomplete_pass = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) fumbled snap at ([0-9a-zA-Z\-]+) for loss of ([\-0-9]+) yard[s]? recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) pass incomplete ([a-z]+) ([a-z]+) to [\#0-9]+ ([a-zA-Z\.\s\-\']+) thrown to ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                fumbled_1_team = posteam
+                fumbled_1_player_name = play_arr[0][0]
+                fumble_recovery_1_team = posteam
+                fumble_recovery_1_player_name = play_arr[0][4]
+                fumble_recovery_1_yards = int(play_arr[0][2]) * -1
+
+                passer_player_name = play_arr[0][6]
+                pass_length = play_arr[0][7]
+                pass_location = play_arr[0][8]
+                receiver_player_name = play_arr[0][9]
+
+                temp_ay = get_yardline(play_arr[0][10], posteam)
+                air_yards = yardline_100 - temp_ay
             elif (
                 "pass" in play["description"].lower() and
                 "incomplete" in play["description"].lower()
