@@ -936,6 +936,47 @@ def parser(
             elif (
                 "caught at" in play["description"].lower() and
                 "out of bounds" in play["description"].lower() and
+                " (#" in play["description"].lower() and
+                (
+                    "left" not in play["description"].lower() and
+                    "right" not in play["description"].lower() and
+                    "middle" not in play["description"].lower()
+                )
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete ([a-zA-Z]+) to [\#0-9]+ ([a-zA-Z\.\-\s\']+) caught at ([0-9a-zA-Z\-]+), for ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\), out of bounds",
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                pass_length = play_arr[0][1]
+                # pass_location = play_arr[0][2]
+                receiver_player_name = play_arr[0][2]
+                temp_ay = get_yardline(play_arr[0][3], posteam)
+                air_yards = yardline_100 - temp_ay
+                passing_yards = int(play_arr[0][4])
+                yards_gained = passing_yards
+                yards_after_catch = passing_yards - air_yards
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][6]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0][0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+
+            elif (
+                "caught at" in play["description"].lower() and
+                "out of bounds" in play["description"].lower() and
                 " (#" in play["description"].lower()
             ):
                 play_arr = re.findall(
