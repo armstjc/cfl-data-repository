@@ -980,6 +980,16 @@ def get_cfl_team_game_stats(season: int) -> pd.DataFrame:
             continue
         json_data = json_data["data"]
 
+        if len(json_data) == 0:
+            time.sleep(15)
+
+            response = requests.get(url=url, headers=headers)
+            time.sleep(2)
+
+            json_data = json.loads(response.text)
+
+        if len(json_data) == 0:
+            continue
         away_team_id = json_data["matchInfo"]["awayTeam"]["competitorId"]
         away_team_abv = json_data["matchInfo"]["awayTeam"]["details"][
             "abbreviation"

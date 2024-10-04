@@ -6265,9 +6265,43 @@ def parser(
                 punt_end_yl = get_yardline(play_arr[0][8], posteam)
             elif (
                 "), out of bounds" in play["description"].lower() and
+                "return" in play["description"].lower() and
+                "lateral to" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) lateral to [\#0-9]+ ([a-zA-Z\.\s\-\']+) for ([\-0-9]+) yard[s]? gain to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\), out of bounds",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][3]
+                return_yards = int(play_arr[0][4])
+                lateral_punt_returner_player_name = play_arr[0][6]
+                lateral_return_yards = int(play_arr[0][7])
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][9]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = posteam
+                    solo_tackle_1_player_name = tak_arr[0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+                punt_end_yl = get_yardline(play_arr[0][8], posteam)
+            elif (
+                "), out of bounds" in play["description"].lower() and
                 "return" in play["description"].lower()
             ):
-                is_punt_out_of_bounds = True
+                # is_punt_out_of_bounds = True
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? " +
                     r"to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
