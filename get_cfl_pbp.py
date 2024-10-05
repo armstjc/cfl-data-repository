@@ -4866,8 +4866,13 @@ def parser(
             is_scrimmage_play = True
             is_aborted_play = True
             is_fumble_not_forced = True
-
             if (
+                "fumbled snap at" in play["description"].lower() and
+                "for loss of" in play["description"].lower() and
+                "touchdown" in play["description"].lower()
+            ):
+                pass
+            elif (
                 "rush" in play["description"].lower() and
                 "shotgun" in play["description"].lower() and
                 "yards loss" in play["description"].lower() and
@@ -6228,6 +6233,45 @@ def parser(
                         f"Unhandled play {play}"
                     )
                 punt_end_yl = get_yardline(play_arr[0][10], posteam)
+            elif (
+                "muffed by" in play["description"].lower() and
+                "recovered by" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) muffed by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][4]
+                return_yards = 0
+
+                fumbled_1_team = defteam
+                fumbled_1_player_name = punt_returner_player_name
+
+                fumble_recovery_1_team = play_arr[0][5]
+                fumble_recovery_1_player_name = play_arr[0][6]
+                fumble_recovery_1_yards = int(play_arr[0][9])
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][11]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = posteam
+                    solo_tackle_1_player_name = tak_arr[0][0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+                punt_end_yl = get_yardline(play_arr[0][10], posteam)
+
             elif "recovered by" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
