@@ -621,19 +621,47 @@ def parser(
                     air_yards = yardline_100 - temp_ay
                     del play_arr
                 except Exception:
-                    play_arr = re.findall(
-                        r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass incomplete " +
-                        r"([a-zA-Z]+) ([a-zA-Z]+) " +
-                        r"thrown to ([0-9a-zA-Z\-]+)",
-                        play["description"]
-                    )
-                    passer_player_name = play_arr[0][0]
-                    pass_length = play_arr[0][1]
-                    pass_location = play_arr[0][2]
-                    # receiver_player_name = play_arr[0][3]
-                    temp_ay = get_yardline(play_arr[0][3], posteam)
-                    air_yards = yardline_100 - temp_ay
-                    del play_arr
+                    try:
+                        play_arr = re.findall(
+                            r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass incomplete " +
+                            r"([a-zA-Z]+) ([a-zA-Z]+) " +
+                            r"thrown to ([0-9a-zA-Z\-]+)",
+                            play["description"]
+                        )
+                        passer_player_name = play_arr[0][0]
+                        pass_length = play_arr[0][1]
+                        pass_location = play_arr[0][2]
+                        # receiver_player_name = play_arr[0][3]
+                        temp_ay = get_yardline(play_arr[0][3], posteam)
+                        air_yards = yardline_100 - temp_ay
+                        del play_arr
+                    except Exception:
+                        try:
+                            play_arr = re.findall(
+                                r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass incomplete ([a-zA-Z]+) thrown to ([0-9a-zA-Z\-]+)",
+                                play["description"]
+                            )
+                            passer_player_name = play_arr[0][0]
+                            pass_length = play_arr[0][1]
+                            # pass_location = play_arr[0][2]
+                            # receiver_player_name = play_arr[0][3]
+                            temp_ay = get_yardline(play_arr[0][2], posteam)
+                            air_yards = yardline_100 - temp_ay
+                            del play_arr
+                        except Exception:
+                            play_arr = re.findall(
+                                r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass incomplete ([a-zA-Z]+) to [\#0-9]+ ([a-zA-Z\.\-\s\']+) thrown to ([0-9a-zA-Z\-]+)",
+                                play["description"]
+                            )
+                            passer_player_name = play_arr[0][0]
+                            pass_length = play_arr[0][1]
+                            # pass_location = play_arr[0][2]
+                            receiver_player_name = play_arr[0][2]
+                            temp_ay = get_yardline(play_arr[0][3], posteam)
+                            air_yards = yardline_100 - temp_ay
+                            del play_arr
+
+
             elif "spike" in play["description"].lower():
                 is_qb_spike = True
                 play_arr = re.findall(
@@ -3428,6 +3456,61 @@ def parser(
                     raise ValueError(
                         f"Unhandled play {play}"
                     )
+            elif (
+                "yard loss" in play["description"].lower() or
+                "yards loss" in play["description"].lower()
+            ) and (
+                "fumbled by" in play["description"].lower() and
+                "recovered by" in play["description"].lower() and
+                "advances" in play["description"].lower() and
+                "out of bounds at" in play["description"].lower() and
+                "forced by" not in play["description"].lower()
+            ):
+                is_fumble = True
+                is_fumble_not_forced = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) rush ([a-zA-Z]+) for ([\-0-9]+) yard[s]? loss to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) advances ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+), out of bounds at",
+                    play["description"]
+                )
+                rusher_player_name = play_arr[0][0]
+                run_location = play_arr[0][1]
+                rushing_yards = int(play_arr[0][2]) * -1
+                yards_gained = rushing_yards
+                fumbled_1_team = posteam
+                fumbled_1_player_name = play_arr[0][4]
+                # forced_fumble_player_1_team = defteam
+                # forced_fumble_player_1_player_name = play_arr[0][6]
+
+                fumble_recovery_1_team = play_arr[0][6]
+                fumble_recovery_1_player_name = play_arr[0][7]
+                fumble_recovery_1_yards = int(play_arr[0][9])
+
+                if fumble_recovery_1_team == posteam:
+                    solo_tackle_1_team = defteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    is_fumble_lost = True
+                    solo_tackle_1_team = posteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+
+                # tak_arr = re.findall(
+                #     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                #     play_arr[0][11]
+                # )
+                # if len(tak_arr) == 2:
+                #     is_assist_tackle = True
+                #     assist_tackle_1_player_name = tak_arr[0][0]
+                #     assist_tackle_2_player_name = tak_arr[1][0]
+                # elif len(tak_arr) == 1:
+                #     solo_tackle_1_team = defteam
+                #     solo_tackle_1_player_name = tak_arr[0]
+                # else:
+                #     raise ValueError(
+                #         f"Unhandled play {play}"
+                #     )
+
             elif (
                 "yard loss" in play["description"].lower() or
                 "yards loss" in play["description"].lower()
@@ -6984,6 +7067,48 @@ def parser(
                 fumble_recovery_1_team = play_arr[0][4]
                 fumble_recovery_1_player_name = play_arr[0][5]
                 fumble_recovery_1_yards = play_arr[0][8]
+            elif (
+                "recovered by" in play["description"].lower() and
+                "fumbled by" in play["description"].lower() and
+                "forced by" not in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \([\#0-9]+ ([a-zA-Z\.\s\-\']+)\)",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][3]
+                return_yards = int(play_arr[0][4])
+                fumbled_1_team = defteam
+                fumbled_1_player_name = play_arr[0][6]
+                fumble_recovery_1_team = play_arr[0][8]
+                fumble_recovery_1_player_name = play_arr[0][9]
+                fumble_recovery_1_yards = int(play_arr[0][12])
+
+                if fumble_recovery_1_team == posteam:
+                    is_fumble_lost = True
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                    solo_tackle_1_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+                    solo_tackle_1_team = posteam
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][5]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    # assist_tackle_1_team = defteam
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    # solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0]
+
             elif "recovered by" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
@@ -8552,6 +8677,148 @@ def parser(
         # Penalty
         elif (
             play["type"].lower() == "penalty" and
+            play["subType"].lower() == "penalty"
+        ):
+            penalty_arr = re.findall(
+                r"PENALTY ([a-zA-Z0-9\s\(\)\#\.\,\-\']+)",
+                play["description"]
+            )[0]
+
+            if "illegal sub (too many men)" in penalty_arr.lower():
+                play_arr = re.findall(
+                    r"([A-Z{2|3}]+) Illegal sub \(too many men\)[ ]? " +
+                    r"([\-0-9]+) yards from " +
+                    r"([0-9a-zA-Z\-]+)? to ([0-9a-zA-Z\-]+)",
+                    penalty_arr
+                )
+                penalty_team = play_arr[0][0]
+                penalty_type = "Illegal sub (too many men)"
+                penalty_yards = play_arr[0][1]
+            elif (
+                "time count after 3min warning on 1st"
+                in penalty_arr.lower() and
+                "loss 10 yards" in penalty_arr.lower()
+            ):
+                play_arr = re.findall(
+                    r"([A-Z{2|3}]+) Time count after 3min warning " +
+                    r"on 1st or 2nd down - Loss 10 yards " +
+                    r"\([\#0-9]+ ([a-zA-Z\.\s\-\']+)\)",
+                    penalty_arr
+                )
+                penalty_team = play_arr[0][0]
+                penalty_type = "Time count after 3min warning on " +\
+                    "1st or 2nd down - Loss of Down"
+                penalty_player_name = play_arr[0][1]
+                penalty_yards = 10
+            elif (
+                "time count after 3min warning on 1st"
+                in penalty_arr.lower()
+            ):
+                play_arr = re.findall(
+                    r"([A-Z{2|3}]+) Time count after 3min warning " +
+                    r"on 1st or 2nd down - Loss of Down " +
+                    r"\([\#0-9]+ ([a-zA-Z\.\s\-\']+)\)",
+                    penalty_arr
+                )
+                penalty_team = play_arr[0][0]
+                penalty_type = "Time count after 3min warning on " +\
+                    "1st or 2nd down - Loss of Down"
+                penalty_player_name = play_arr[0][1]
+            elif (
+                "yards from" in penalty_arr.lower() and
+                "(" in penalty_arr.lower()
+            ):
+                try:
+                    play_arr = re.findall(
+                        r"([A-Z]{2,4}) ([\s\,a-zA-Z0-9\()]+) " +
+                        r"\([\#0-9]+ ([a-zA-Z\.\s\-\']+)\) " +
+                        r"([\-0-9]+) yard[s]? from " +
+                        r"([0-9a-zA-Z\-]+)? to ([0-9a-zA-Z\-]+)",
+                        penalty_arr
+                    )
+                    penalty_team = play_arr[0][0]
+                    penalty_type = play_arr[0][1]
+                    penalty_player_name = play_arr[0][2]
+
+                    play_arr = re.findall(
+                        r"([A-Z]{2,4}) ([\s\,a-zA-Z0-9\()]+) " +
+                        r"\([\#0-9]+ ([a-zA-Z\.\s\-\']+)\) " +
+                        r"([\-0-9]+) yard[s]? " +
+                        r"from ([0-9a-zA-Z\-]+)? to ([0-9a-zA-Z\-]+)",
+                        penalty_arr
+                    )
+                    penalty_team = play_arr[0][0]
+                    penalty_type = play_arr[0][1]
+                    penalty_player_name = play_arr[0][2]
+                    penalty_yards = int(play_arr[0][3])
+                except Exception:
+                    play_arr = re.findall(
+                        r"([A-Z]{2,4}) ([\s\,a-zA-Z0-9\()]+)\s" +
+                        r"([\-0-9]+) yard[s]? from ([0-9a-zA-Z\-]+) " +
+                        r"to ([0-9a-zA-Z\-]+)",
+                        penalty_arr
+                    )
+                    penalty_team = play_arr[0][0]
+                    penalty_type = play_arr[0][1]
+                    penalty_yards = int(play_arr[0][2])
+            elif (
+                "yards from" in penalty_arr
+            ):
+                play_arr = re.findall(
+                    r"([A-Z]{2,4}) ([\s\,a-zA-Z0-9\()]+)\s" +
+                    r"([\-0-9]+) yard[s]? from ([0-9a-zA-Z\-]+) " +
+                    r"to ([0-9a-zA-Z\-]+)",
+                    penalty_arr
+                )
+                penalty_team = play_arr[0][0]
+                penalty_type = play_arr[0][1]
+                penalty_yards = int(play_arr[0][2])
+            elif (
+                "(" not in penalty_arr and "declined" in penalty_arr
+            ):
+                play_arr = re.findall(
+                    r"([A-Z]{2,4}) ([a-zA-Z\-\s\,0-9]+) declined",
+                    penalty_arr
+                )
+                penalty_team = play_arr[0][0]
+                penalty_type = play_arr[0][1]
+                # penalty_player_name = play_arr[0][2]
+                # penalty_yards = int(play_arr[0][3])
+            elif " , 1st down" in penalty_arr.lower():
+                play_arr = re.findall(
+                    r"([A-Z]{2,4}) ([a-zA-Z\-\s\,0-9]+) , 1ST DOWN",
+                    penalty_arr
+                )
+                penalty_team = play_arr[0][0]
+                penalty_type = play_arr[0][1]
+            else:
+                play_arr = re.findall(
+                    r"([A-Z]{2,4}) ([a-zA-Z\-\s\,0-9]+) " +
+                    r"\([\#0-9]+ ([a-zA-Z\.\s\-\']+)\)",
+                    penalty_arr
+                )
+                penalty_team = play_arr[0][0]
+                penalty_type = play_arr[0][1]
+                penalty_player_name = play_arr[0][2]
+                # penalty_yards = int(play_arr[0][3])
+            del penalty_arr
+
+            if "safety" in play["description"].lower():
+                is_safety = True
+                try:
+                    play_arr = re.findall(
+                        r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) SAFETY TOUCH",
+                        play["description"]
+                    )
+                    safety_player_name = play_arr[0]
+                except Exception:
+                    play_arr = re.findall(
+                        r" ([a-zA-Z\.\-\s\']+) SAFETY TOUCH",
+                        play["description"]
+                    )
+                    safety_player_name = play_arr[0]
+        elif (
+            play["type"].lower() == "kneel" and
             play["subType"].lower() == "penalty"
         ):
             penalty_arr = re.findall(
