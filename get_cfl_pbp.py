@@ -195,6 +195,7 @@ def parser(
         td_team = ""
         td_player_name = ""
         safety_player_name = ""
+        lateral_interception_player_name = ""
 
         kick_distance = 0
         air_yards = 0
@@ -781,6 +782,49 @@ def parser(
                     receiver_player_name = play_arr[0][3]
                     temp_ay = get_yardline(play_arr[0][4], posteam)
                     air_yards = yardline_100 - temp_ay
+            elif (
+                "yard loss" in play["description"].lower() or
+                "yards loss" in play["description"].lower()
+            ) and (
+                "caught at" in play["description"].lower() and
+                "out of bounds" in play["description"].lower() and
+                "(" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete ([a-zA-Z]+) ([a-zA-Z]+) to [\#0-9]+ ([a-zA-Z\.\-\s\']+) caught at ([0-9a-zA-Z\-]+), for ([\-0-9]+) yard[s]? loss to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\), out of bounds",
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                pass_length = play_arr[0][1]
+                pass_location = play_arr[0][2]
+                receiver_player_name = play_arr[0][3]
+                temp_ay = get_yardline(play_arr[0][4], posteam)
+                air_yards = yardline_100 - temp_ay
+                passing_yards = int(play_arr[0][5]) * -1
+                yards_gained = passing_yards
+                yards_after_catch = passing_yards - air_yards
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][7]
+                )
+                if len(tak_arr) == 2:
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                    tackle_for_loss_1_player_name = assist_tackle_1_player_name
+                    tackle_for_loss_2_player_name = assist_tackle_2_player_name
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0]
+                    tackle_for_loss_1_player_name = solo_tackle_1_player_name
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+
             elif (
                 "yard loss" in play["description"].lower() or
                 "yards loss" in play["description"].lower()
@@ -2303,6 +2347,23 @@ def parser(
                 interception_player_name = play_arr[0][1]
                 pass_defense_1_player_name = play_arr[0][3]
                 return_yards = play_arr[0][5]
+                td_team = defteam
+                td_player_name = interception_player_name
+            elif (
+                "pass intercepted by" in play["description"].lower() and
+                "lateral to" in play["description"].lower()
+            ):
+                is_return_touchdown = True
+                is_interception = True
+                is_lateral_return = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass intercepted by [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) lateral to [\#0-9]+ ([a-zA-Z\.\-\s\']+) TOUCHDOWN",
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                interception_player_name = play_arr[0][1]
+                return_yards = play_arr[0][4]
+                lateral_interception_player_name = play_arr[0][6]
                 td_team = defteam
                 td_player_name = interception_player_name
             elif "pass intercepted by" in play["description"].lower():
@@ -9183,7 +9244,7 @@ def parser(
                 "interception_player_id": None,
                 "interception_player_name": interception_player_name,
                 "lateral_interception_player_id": None,
-                "lateral_interception_player_name": None,
+                "lateral_interception_player_name": lateral_interception_player_name,
                 "punt_returner_player_id": None,
                 "punt_returner_player_name": punt_returner_player_name,
                 "lateral_punt_returner_player_id": None,
