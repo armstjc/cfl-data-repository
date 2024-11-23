@@ -7169,6 +7169,47 @@ def parser(
                 elif len(tak_arr) == 1:
                     # solo_tackle_1_team = defteam
                     solo_tackle_1_player_name = tak_arr[0]
+            elif (
+                "recovered by" in play["description"].lower() and
+                "blocked by" in play["description"].lower() and
+                "return" in play["description"].lower()
+            ):
+                is_punt_blocked = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) blocked by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                blocked_player_name = play_arr[0][3]
+
+                if play_arr[0][4] == posteam:
+                    fumble_recovery_1_team = posteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                    solo_tackle_1_team = defteam
+                elif play_arr[0][4] == defteam:
+                    fumble_recovery_1_team = defteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+                    solo_tackle_1_team = posteam
+                fumble_recovery_1_player_name = play_arr[0][5]
+                fumble_recovery_1_yards = play_arr[0][8]
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][10]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_player_name = tak_arr[0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
 
             elif "recovered by" in play["description"].lower():
                 play_arr = re.findall(
