@@ -68,6 +68,10 @@ def get_cfl_schedules(season: int) -> pd.DataFrame:
 if __name__ == "__main__":
     now = datetime.now()
     now_timestamp = now.isoformat()
+    year = now.year
+
+    if now.month < 5:
+        year -= 1
 
     try:
         os.mkdir("schedule")
@@ -78,7 +82,7 @@ if __name__ == "__main__":
     with open("schedule/timestamp.json", "w+") as f:
         f.write(timestamp_json)
 
-    for i in tqdm(range(now.year-1, now.year+1)):
+    for i in tqdm(range(year-1, year+1)):
         df = get_cfl_schedules(i)
         df.to_csv(
             f"schedule/{i}_cfl_schedule.csv",

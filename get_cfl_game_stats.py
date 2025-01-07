@@ -1222,6 +1222,11 @@ def get_cfl_team_game_stats(season: int) -> pd.DataFrame:
 
 if __name__ == "__main__":
     now = datetime.now()
+    season = now.year
+
+    if now.month < 5:
+        season -= 1
+
     try:
         os.mkdir("player_stats")
     except FileExistsError:
@@ -1240,7 +1245,7 @@ if __name__ == "__main__":
     except FileExistsError:
         logging.info("`./team_stats/game_stats` already exists.")
 
-    for i in range(now.year, now.year+1):
+    for i in range(season, season+1):
         print(f"Getting {i} player game stats.")
         print(get_cfl_player_game_stats(i))
         print(f"Getting {i} team game stats.")

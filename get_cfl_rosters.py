@@ -41,6 +41,9 @@ def get_cfl_rosters():
 
     now = datetime.now()
     season = now.year
+
+    if now.month < 5:
+        season -= 1
     url = (
         "https://www.cfl.ca/wp-content/themes/cfl.ca/inc/"
         + "admin-ajax.php?action=get_all_players"
@@ -51,7 +54,7 @@ def get_cfl_rosters():
         + "Chrome/125.0.0.0 Safari/537.36",
     }
     # rosters_df = pd.DataFrame()
-    schedule_df = get_cfl_schedules(now.year)
+    schedule_df = get_cfl_schedules(season)
     schedule_df = schedule_df[
         (schedule_df["team_1_score"] > 0) | (schedule_df["team_2_score"] > 0)
     ]
@@ -252,6 +255,10 @@ def get_stats_crew_cfl_rosters(season: int):
 
 if __name__ == "__main__":
     now = datetime.now()
+    year = now.year
+
+    if now.month < 5:
+        year -= 1
     get_cfl_rosters()
     # print(get_cfl_rosters())
-    get_stats_crew_cfl_rosters(now.year)
+    get_stats_crew_cfl_rosters(year)

@@ -305,6 +305,11 @@ def parse_cfl_player_season_stats(season: int):
 
 if __name__ == "__main__":
     now = datetime.now()
+
+    season = now.year
+    if now.month < 5:
+        season -= 1
+
     try:
         os.mkdir("player_stats")
     except FileExistsError:
@@ -315,7 +320,7 @@ if __name__ == "__main__":
     except FileExistsError:
         logging.info("`./player_stats/season_stats` already exists.")
 
-    for i in range(now.year, now.year+1):
+    for i in range(season, season+1):
         if i == 2020:
             # Catch the 2020 season, because no CFL games were played
             # due to COVID-19.

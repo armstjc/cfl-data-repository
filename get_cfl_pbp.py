@@ -9774,9 +9774,12 @@ def get_cfl_season_pbp_data(season: int) -> pd.DataFrame:
 
 if __name__ == "__main__":
     now = datetime.now()
-    for i in range(now.year, now.year + 1):
+    year = now.year
+
+    if now.month < 5:
+        year -= 1
+    for i in range(year, year + 1):
         get_cfl_season_pbp_data(i)
     # get_cfl_season_pbp_data(now.year)
     # df = get_cfl_pbp_data(9888990, 2023)
     # df.to_csv("test.csv")
-
