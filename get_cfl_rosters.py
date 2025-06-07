@@ -55,24 +55,25 @@ def get_cfl_rosters():
     }
     # rosters_df = pd.DataFrame()
     schedule_df = get_cfl_schedules(season)
-    schedule_df = schedule_df[
-        (schedule_df["team_1_score"] > 0) | (schedule_df["team_2_score"] > 0)
-    ]
+    schedule_df = schedule_df[schedule_df["eventStatus_name"] != "Pre-Game"]
     # game_types_arr = schedule_df.to_list()
     # if "Regular Season" in game_types_arr:
     #     week = 0
-    schedule_df = schedule_df[schedule_df["eventTypeName"] != "Preseason"]
+    # schedule_df = schedule_df[schedule_df["eventTypeName"] != "Preseason"]
 
-    if "Grey Cup" in schedule_df["eventTypeName"].iloc[-1]:
+    if "Preseason" in schedule_df["eventTypeName"].iloc[-1]:
+        week = 0
+        # season += 1
+    elif "Grey Cup" in schedule_df["eventTypeName"].iloc[-1]:
         week = 0
         season += 1
-    if len(schedule_df) == 0:
+    elif len(schedule_df) == 0:
         week = 0
     else:
         week = max(schedule_df["week"].to_list()) + 1
 
     response = requests.get(url=url, headers=headers)
-
+    
     json_data = json.loads(response.text)
     json_data = json_data["data"]
     players_df = pd.DataFrame(
@@ -261,4 +262,4 @@ if __name__ == "__main__":
         year -= 1
     get_cfl_rosters()
     # print(get_cfl_rosters())
-    get_stats_crew_cfl_rosters(year)
+    # get_stats_crew_cfl_rosters(year)

@@ -141,6 +141,7 @@ def parser(
     for p in range(len(pbp_data)-1, -1, -1):
         play = pbp_data[p]
         play["description"] = play["description"].replace("()", "")
+        play["description"] = play["description"].replace("Jr,)", "Jr.)")
         # Fixes an issue that would otherwise completely break the regex code.
         play["description"] = play["description"].replace("Ottawa", "OTT")
         play["description"] = play["description"].replace("ottawa", "OTT")
@@ -6291,6 +6292,57 @@ def parser(
                 "fumbled by" in play["description"].lower() and
                 "recovered by" in play["description"].lower() and
                 "return" in play["description"].lower() and
+                "advances" in play["description"].lower() and
+                play["description"].lower().count("return") == 1
+            ):
+                is_fumble = True
+                is_fumble_not_forced = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) advances ([0-9\-]) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][3]
+                return_yards = int(play_arr[0][4])
+
+                fumbled_1_team = defteam
+                fumbled_1_player_name = play_arr[0][6]
+
+                fumble_recovery_1_team = play_arr[0][8]
+                fumble_recovery_1_player_name = play_arr[0][9]
+                fumble_recovery_1_yards = play_arr[0][11]
+
+                if fumble_recovery_1_team == posteam:
+                    is_fumble_lost = True
+                    solo_tackle_1_team = defteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    solo_tackle_1_team = posteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][13]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_player_name = tak_arr[0][0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+                punt_end_yl = get_yardline(play_arr[0][10], posteam)
+
+            elif (
+                "fumbled by" in play["description"].lower() and
+                "recovered by" in play["description"].lower() and
+                "return" in play["description"].lower() and
                 play["description"].lower().count("return") == 1
             ):
                 is_fumble = True
@@ -6983,7 +7035,18 @@ def parser(
             special_teams_play_type = "punt"
             # is_rouge = True
 
-            if "return for loss of" in play["description"].lower():
+            if (
+                "touchdown nullified by penalty" in play["description"].lower() and
+                "no yards, 15 yards" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"TOUCHDOWN nullified by penalty, clock ([0-9\:]+) [PENALTY|penalty]+ ([A-Z]+) No yards, 15 yards \([\#0-9]+ ([a-zA-Z\.\s\-\']+)\) ([0-9]+) yard[s]+ from ([0-9a-zA-Z\-]+) to ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                test_str = play_arr[0][0]
+
+                del test_str
+            elif "return for loss of" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
                     r"punt ([\-0-9]+) yard[s]? " +
@@ -7078,6 +7141,45 @@ def parser(
                 kick_distance = int(play_arr[0][1])
                 punt_returner_player_name = play_arr[0][4]
                 return_yards = int(play_arr[0][7])
+            elif (
+                "fumbled by" in play["description"].lower() and
+                "forced by" in play["description"].lower() and
+                "recovered by" in play["description"].lower() and
+                "advances" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) forced by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) advances ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][3]
+                return_yards = int(play_arr[0][4])
+                fumbled_1_team = defteam
+                fumbled_1_player_name = play_arr[0][6]
+                fumble_recovery_1_team = play_arr[0][9]
+
+                forced_fumble_player_1_team = posteam
+                forced_fumble_player_1_player_name = play_arr[0][8]
+                fumble_recovery_1_player_name = play_arr[0][10]
+                fumble_recovery_1_yards = int(play_arr[0][12])
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][14]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0][0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
             elif (
                 "fumbled by" in play["description"].lower() and
                 "recovered by" in play["description"].lower() and
@@ -7210,7 +7312,6 @@ def parser(
                     raise ValueError(
                         f"Unhandled play {play}"
                     )
-
             elif "recovered by" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
@@ -9712,19 +9813,19 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
     pbp_df["away_score"] = json_data["scoreboardInfo"]["awayScore"]
     pbp_df["home_score"] = json_data["scoreboardInfo"]["homeScore"]
 
-    player_chain = get_player_chain(
-        season=season,
-        away_team_abv=away_team_abv,
-        home_team_abv=home_team_abv
-    )
+    # player_chain = get_player_chain(
+    #     season=season,
+    #     away_team_abv=away_team_abv,
+    #     home_team_abv=home_team_abv
+    # )
 
-    for i in range(0, len(player_name_columns)):
-        p_name_column = player_name_columns[i]
-        p_id_column = player_id_columns[i]
+    # for i in range(0, len(player_name_columns)):
+    #     p_name_column = player_name_columns[i]
+    #     p_id_column = player_id_columns[i]
 
-        pbp_df[p_id_column] = pbp_df[p_name_column].map(
-            player_chain
-        )
+    #     pbp_df[p_id_column] = pbp_df[p_name_column].map(
+    #         player_chain
+    #     )
 
     pbp_df["home_opening_kickoff"] = home_opening_kickoff
     return pbp_df
@@ -9748,7 +9849,6 @@ def get_cfl_season_pbp_data(season: int) -> pd.DataFrame:
     season_types_arr = schedule_df["eventTypeName"].to_numpy()
     weeks_arr = schedule_df["week"].to_numpy()
     pbp_df["season"] = season
-
 
     now = datetime.now()
     timestamp_str = now.isoformat()
