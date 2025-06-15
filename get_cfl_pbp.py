@@ -2548,6 +2548,36 @@ def parser(
                 return_yards = int(play_arr[0][4]) * -1
             elif (
                 "return" in play["description"].lower() and
+                "broken up by" in play["description"].lower() and
+                "out of bounds at" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) pass intercepted by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) broken up by [\#0-9]+ ([a-zA-Z\.\s\-\']+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+), out of bounds at ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                interception_player_name = play_arr[0][1]
+                pass_defense_1_player_name = play_arr[0][3]
+                return_yards = int(play_arr[0][5])
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][7]
+                )
+                # if len(tak_arr) == 2:
+                #     is_assist_tackle = True
+                #     assist_tackle_1_team = posteam
+                #     assist_tackle_2_team = posteam
+                #     assist_tackle_1_player_name = tak_arr[0][0]
+                #     assist_tackle_2_player_name = tak_arr[1][0]
+                # elif len(tak_arr) == 1:
+                #     solo_tackle_1_team = posteam
+                #     solo_tackle_1_player_name = tak_arr[0][0]
+                # else:
+                #     raise ValueError(
+                #         f"Unhandled play {play}"
+                #     )
+            elif (
+                "return" in play["description"].lower() and
                 "broken up by" in play["description"].lower()
             ):
                 play_arr = re.findall(
