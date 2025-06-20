@@ -853,6 +853,66 @@ def parser(
                 "caught at" in play["description"].lower() and
                 "fumbled by" in play["description"].lower() and
                 "forced by" in play["description"].lower() and
+                "recovered by" in play["description"].lower() and
+                "advances" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete ([a-zA-Z]+) ([a-zA-Z]+) to [\#0-9]+ ([a-zA-Z\.\-\s\']+) caught at ([0-9a-zA-Z\-]+), for ([\-0-9]+) yard[s]? loss to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) forced by [\#0-9]+ ([a-zA-Z\.\-\s\']+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) advances ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                pass_length = play_arr[0][1]
+                pass_location = play_arr[0][2]
+                receiver_player_name = play_arr[0][3]
+                temp_ay = get_yardline(play_arr[0][4], posteam)
+                air_yards = yardline_100 - temp_ay
+                passing_yards = int(play_arr[0][5]) * -1
+                yards_gained = passing_yards
+                yards_after_catch = passing_yards - air_yards
+
+                fumbled_1_team = posteam
+                fumbled_1_player_name = play_arr[0][7]
+
+                forced_fumble_player_1_team = defteam
+                forced_fumble_player_1_player_name = play_arr[0][9]
+
+                fumble_recovery_1_team = play_arr[0][10]
+                fumble_recovery_1_player_name = play_arr[0][11]
+                fumble_recovery_1_yards = int(play_arr[0][13])
+
+                if fumble_recovery_1_team == posteam:
+                    solo_tackle_1_team = defteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    solo_tackle_1_team = posteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][15]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                    tackle_for_loss_1_player_name = assist_tackle_1_player_name
+                    tackle_for_loss_2_player_name = assist_tackle_2_player_name
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_player_name = tak_arr[0]
+                    tackle_for_loss_1_player_name = solo_tackle_1_player_name
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+            elif (
+                "yard loss" in play["description"].lower() or
+                "yards loss" in play["description"].lower()
+            ) and (
+                "caught at" in play["description"].lower() and
+                "fumbled by" in play["description"].lower() and
+                "forced by" in play["description"].lower() and
                 "recovered by" in play["description"].lower()
             ):
                 play_arr = re.findall(
@@ -1459,6 +1519,27 @@ def parser(
                     raise ValueError(
                         f"Unhandled play {play}"
                     )
+            elif (
+                "caught at" in play["description"].lower() and
+                "(" not in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete " +
+                    r"([a-zA-Z]+) ([a-zA-Z]+) to " +
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) " +
+                    r"caught at ([0-9a-zA-Z\-]+), for ([\-0-9]+) yard[s]? " +
+                    r"to the ([0-9a-zA-Z\-]+) " ,
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                pass_length = play_arr[0][1]
+                pass_location = play_arr[0][2]
+                receiver_player_name = play_arr[0][3]
+                temp_ay = get_yardline(play_arr[0][4], posteam)
+                air_yards = yardline_100 - temp_ay
+                passing_yards = int(play_arr[0][5])
+                yards_gained = passing_yards
+                yards_after_catch = passing_yards - air_yards
             elif "caught at" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete " +
