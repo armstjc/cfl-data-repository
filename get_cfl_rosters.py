@@ -12,10 +12,6 @@ from tqdm import tqdm
 
 from get_schedules import get_cfl_schedules
 
-# def get_cfl_stats_crew_rosters(season: int):
-#     """ """
-#     url = f"https://www.statscrew.com/football/l-CFL/y-{season}"
-
 
 def parse_cfl_player_url(player_url: str) -> int:
     """ """
@@ -51,7 +47,7 @@ def get_cfl_rosters():
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/125.0.0.0 Safari/537.36",
+        + "Chrome/138.0.0.0 Safari/537.36",
     }
     # rosters_df = pd.DataFrame()
     schedule_df = get_cfl_schedules(season)
@@ -73,7 +69,7 @@ def get_cfl_rosters():
         week = max(schedule_df["week"].to_list()) + 1
 
     response = requests.get(url=url, headers=headers)
-    
+
     json_data = json.loads(response.text)
     json_data = json_data["data"]
     players_df = pd.DataFrame(
@@ -92,7 +88,8 @@ def get_cfl_rosters():
         ],
     )
     players_df["jersey_num"] = pd.to_numeric(
-        players_df["jersey_num"], errors="coerce"
+        players_df["jersey_num"],
+        errors="coerce"
     )
     players_df["weight"] = pd.to_numeric(players_df["weight"], errors="coerce")
     players_df["age"] = pd.to_numeric(players_df["age"], errors="coerce")
@@ -128,10 +125,7 @@ def get_cfl_rosters():
 
     players_df.to_csv("rosters/cfl_players.csv", index=False)
 
-    rosters_df.to_csv(
-        f"rosters/{now.year}_cfl_rosters.csv",
-        index=False
-    )
+    rosters_df.to_csv(f"rosters/{now.year}_cfl_rosters.csv", index=False)
     rosters_df.loc[players_df["player_id"] != 0, "week"] = week
 
     rosters_df.to_csv(
@@ -157,7 +151,7 @@ def get_stats_crew_cfl_rosters(season: int):
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/125.0.0.0 Safari/537.36",
+        + "Chrome/138.0.0.0 Safari/537.36",
     }
 
     # now = datetime.now()
@@ -177,20 +171,14 @@ def get_stats_crew_cfl_rosters(season: int):
 
     for url in base_urls_arr:
         url_str = url.get("href")
-        if (
-            "roster" in url_str and
-            "statscrew.com" in url_str
-        ):
+        if "roster" in url_str and "statscrew.com" in url_str:
             urls_arr.append(url_str)
 
     for url in tqdm(urls_arr):
         team_id = url.split("/y-")[0]
         team_id = team_id.split("/t-")[1]
         team_id = team_id.replace("CFL", "")
-        response = requests.get(
-            url=url,
-            headers=headers
-        )
+        response = requests.get(url=url, headers=headers)
         time.sleep(5)
         soup = BeautifulSoup(response.text, features="lxml")
 
@@ -205,24 +193,15 @@ def get_stats_crew_cfl_rosters(season: int):
         for row in t_body:
             try:
                 player_id = row.find("a").get("href")
-                player_id = player_id.replace(
-                    "https://www.statscrew.com/",
-                    ""
-                )
-                player_id = player_id.replace(
-                    "football/stats/p-",
-                    ""
-                )
+                player_id = player_id.replace("https://www.statscrew.com/", "")
+                player_id = player_id.replace("football/stats/p-", "")
                 player_id = player_id.replace("/", "")
             except Exception:
                 continue
 
             t_cells = row.find_all("td")
             t_cells = [x.text.strip() for x in t_cells]
-            temp_df = pd.DataFrame(
-                data=[t_cells],
-                columns=t_header_arr
-            )
+            temp_df = pd.DataFrame(data=[t_cells], columns=t_header_arr)
             temp_df["stats_crew_player_id"] = player_id
             temp_df["team_id"] = team_id
             roster_df_arr.append(temp_df)
@@ -261,5 +240,3 @@ if __name__ == "__main__":
     if now.month < 5:
         year -= 1
     get_cfl_rosters()
-    # print(get_cfl_rosters())
-    # get_stats_crew_cfl_rosters(year)

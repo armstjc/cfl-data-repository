@@ -791,7 +791,7 @@ def get_cfl_player_game_stats(season: int) -> pd.DataFrame:
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/125.0.0.0 Safari/537.36",
+        + "Chrome/138.0.0.0 Safari/537.36",
     }
     game_ids_arr = schedule_df["eventId"].to_list()
     fixture_ids_arr = schedule_df["fixtureId"].to_list()
@@ -893,7 +893,7 @@ def get_cfl_team_game_stats(season: int) -> pd.DataFrame:
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/125.0.0.0 Safari/537.36",
+        + "Chrome/138.0.0.0 Safari/537.36",
     }
     game_ids_arr = schedule_df["eventId"].to_list()
     fixture_ids_arr = schedule_df["fixtureId"].to_list()
