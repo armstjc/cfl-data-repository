@@ -1,15 +1,11 @@
-from io import StringIO
-import json
 import logging
 import os
 import time
 from datetime import datetime
 
-import numpy as np
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from tqdm import tqdm
 
 
 def get_negotiation_lists():
@@ -49,6 +45,7 @@ def get_negotiation_lists():
         ).find(
             "span", {"class": "text"}
         ).text
+
         table_data = team.find("table").find("tbody").find_all("tr")
         for row in table_data:
             cells = row.find_all("td")
@@ -70,6 +67,7 @@ def get_negotiation_lists():
         f"rosters/negotiation_list/{date_str}_cfl_negotiation_lists.csv",
         index=False
     )
+
 
 if __name__ == "__main__":
     get_negotiation_lists()
