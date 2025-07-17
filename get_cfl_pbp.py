@@ -3222,9 +3222,7 @@ def parser(
 
             if "sack" in play["description"].lower():
                 play_arr = re.findall(
-                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) sacked for loss of " +
-                    r"([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) " +
-                    r"\(([a-zA-Z0-9\#\.\-\s\'\;\,]+)\)",
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) sacked for [loss|gain]+ of ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;\,]+)\)",
                     play["description"]
                 )
 
@@ -8642,6 +8640,21 @@ def parser(
                     raise ValueError(
                         f"Unhandled play {play}"
                     )
+            elif (
+                "return" in play["description"].lower() and
+                " end of play" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) kick attempt ([a-zA-Z]+) \(H: [\#0-9]+ ([a-zA-Z\.\s\-\']+), LS: [\#0-9]+ ([a-zA-Z\.\s\-\']+)\) recovered by ([A-Z{2|3}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+)\, [END|end]+ [OF|of]+ [PLAY|play]+",
+                    play["description"]
+                )
+                kicker_player_name = play_arr[0][0]
+                extra_point_result = play_arr[0][1]
+
+                missed_fg_return_team = play_arr[0][4]
+                missed_fg_return_player_name = play_arr[0][5]
+                missed_fg_return_yards = int(play_arr[0][8])
+                return_yards = missed_fg_return_yards
             elif "return" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) kick attempt ([a-zA-Z]+) " +
