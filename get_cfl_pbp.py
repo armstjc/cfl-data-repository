@@ -6174,20 +6174,7 @@ def parser(
                 is_fumble = True
                 try:
                     play_arr = re.findall(
-                        r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
-                        r"punt ([\-0-9]+) yard[s]? " +
-                        r"to the ([0-9a-zA-Z\-]+) " +
-                        r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
-                        r"return ([\-0-9]+) yards to the ([0-9a-zA-Z\-]+) " +
-                        r"fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at " +
-                        r"([0-9a-zA-Z\-]+) forced by " +
-                        r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by " +
-                        r"([a-zA-Z{2|3}]+) " +
-                        r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) at " +
-                        r"([0-9a-zA-Z\-]+) " +
-                        r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) return " +
-                        r"([\-0-9]+) yards to the ([0-9a-zA-Z\-]+) " +
-                        r"\(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                        r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) forced by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([a-zA-Z{2|3}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yards to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
                         play["description"]
                     )
                     punter_player_name = play_arr[0][0]
@@ -7751,6 +7738,18 @@ def parser(
                     raise ValueError(
                         f"Unhandled play {play}"
                     )
+            elif (
+                "recovered by" in play["description"].lower() and
+                "return" not in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) \([\#0-9]+ ([a-zA-Z\.\s\-\']+)\)",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][3]
+                return_yards = 0
             elif "recovered by" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
