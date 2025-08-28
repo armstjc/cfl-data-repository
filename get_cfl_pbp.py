@@ -6169,6 +6169,60 @@ def parser(
                 "forced by" in play["description"].lower() and
                 play["description"].count("recovered by") == 1
                 and "return" in play["description"].lower()
+                and "advances" in play["description"].lower()
+            ):
+                is_fumble_forced = True
+                is_fumble = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) forced by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([a-zA-Z{2|3}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) advances ([\-0-9]+) yards to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][3]
+                return_yards = int(play_arr[0][4])
+                fumbled_1_team = defteam
+                fumbled_1_player_name = play_arr[0][6]
+                forced_fumble_player_1_team = posteam
+                forced_fumble_player_1_player_name = play_arr[0][8]
+
+                fumble_recovery_1_team = play_arr[0][9]
+                if fumble_recovery_1_team == posteam:
+                    is_fumble_lost = True
+
+                fumble_recovery_1_player_name = play_arr[0][10]
+                fumble_recovery_1_yards = play_arr[0][13]
+
+                if fumble_recovery_1_team == posteam:
+                    solo_tackle_1_team = defteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    solo_tackle_1_team = posteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][14]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_player_name = tak_arr[0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+
+                punt_end_yl = get_yardline(play_arr[0][7], posteam)
+            elif (
+                "fumbled by" in play["description"].lower() and
+                "forced by" in play["description"].lower() and
+                play["description"].count("recovered by") == 1
+                and "return" in play["description"].lower()
             ):
                 is_fumble_forced = True
                 is_fumble = True
@@ -7910,6 +7964,16 @@ def parser(
                 return_yards = int(play_arr[0][4])
                 td_team = defteam
                 td_player_name = punt_returner_player_name
+            elif (
+                "single nullified by penalty" in play["description"].lower() and
+                "return" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+)  ?return ([0-9\-]+) yard[s]? to the ([0-9a-zA-Z\-]+) [SINGLE|single]+ nullified by penalty",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
             elif "single nullified by penalty" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [SINGLE|single]+ nullified by penalty",
