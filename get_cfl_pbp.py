@@ -2978,9 +2978,16 @@ def parser(
                 fumble_recovery_1_player_name = play_arr[0][3]
                 fumble_recovery_1_yards = play_arr[0][6]
             elif "lateral" in play["description"].lower():
-                raise NotImplementedError(
-                    f"Unhandled interception return:\n{play["description"]}"
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) pass intercepted by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) lateral to [\#0-9]+ ([a-zA-Z\.\s\-\']+) for ([\-0-9]+) yard[s]? gain to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
                 )
+                passer_player_name = play_arr[0][0]
+                interception_player_name = play_arr[0][1]
+                return_yards = int(play_arr[0][4])
+                lateral_interception_player_name = play_arr[0][6]
+                lateral_return_yards = play_arr[0][7]
+
             elif "touchdown" in play["description"].lower():
                 raise NotImplementedError(
                     f"Unhandled interception return:\n{play["description"]}"
@@ -3590,6 +3597,60 @@ def parser(
             elif (
                 " for 0 yards to the" in play["description"].lower() and
                 "fumbled by" in play["description"].lower() and
+                "advances" in play["description"].lower() and
+                "lateral to" in play["description"].lower()
+            ):
+                is_fumble = True
+                is_fumble_forced = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) rush ([a-zA-Z]+) for ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) forced by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) advances ([\-0-9]+) yards to the ([0-9a-zA-Z\-]+) lateral to [\#0-9]+ ([a-zA-Z\.\s\-\']+) advances ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;\,]+)\)",
+                    play["description"]
+                )
+                rusher_player_name = play_arr[0][0]
+                run_location = play_arr[0][1]
+                rushing_yards = int(play_arr[0][2]) * -1
+                yards_gained = rushing_yards
+                fumbled_1_team = posteam
+                fumbled_1_player_name = play_arr[0][4]
+                forced_fumble_player_1_team = defteam
+                forced_fumble_player_1_player_name = play_arr[0][6]
+
+                fumble_recovery_1_team = play_arr[0][7]
+                fumble_recovery_1_player_name = play_arr[0][8]
+                fumble_recovery_1_yards = int(play_arr[0][10])
+
+                lateral_fumble_recovery_team = fumble_recovery_1_team
+                if fumble_recovery_1_team == posteam:
+                    solo_tackle_1_team = defteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    is_fumble_lost = True
+                    solo_tackle_1_team = posteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+
+                lateral_fumble_recovery_player_name = play_arr[0][12]
+                lateral_return_yards = play_arr[0][13]
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][15]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+            elif (
+                " for 0 yards to the" in play["description"].lower() and
+                "fumbled by" in play["description"].lower() and
                 "advances" in play["description"].lower()
             ):
                 is_fumble = True
@@ -3692,6 +3753,43 @@ def parser(
                     raise ValueError(
                         f"Unhandled play {play}"
                     )
+            elif (
+                "yard gain" in play["description"].lower() or
+                "yards gain" in play["description"].lower()
+            ) and (
+                "recovered by" in play["description"].lower() and
+                "advances" in play["description"].lower()
+            ) and (
+                "fumbled by" in play["description"].lower() and
+                "out of bounds at" in play["description"].lower()
+            ):
+                is_fumble = True
+                is_fumble_forced = True
+                is_fumble_out_of_bounds = True
+                play_arr = re.findall(
+                    r"[\#0-9 ]+? ([a-zA-Z\.\s\-]+) rush ([a-zA-Z]+) for ([\-0-9]+) yard[s]? gain to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9 ]+? ([a-zA-Z\.\s\-]+) at ([0-9a-zA-Z\-]+) forced by [\#0-9 ]+? ([a-zA-Z\.\s\-]+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) advances ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+)\, out of bounds at ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                rusher_player_name = play_arr[0][0]
+                run_location = play_arr[0][1]
+                rushing_yards = int(play_arr[0][2])
+                yards_gained = rushing_yards
+                fumbled_1_team = posteam
+                fumbled_1_player_name = play_arr[0][4]
+                forced_fumble_player_1_team = defteam
+                forced_fumble_player_1_player_name = play_arr[0][6]
+
+                fumble_recovery_1_team = play_arr[0][7]
+                fumble_recovery_1_player_name = play_arr[0][8]
+                fumble_recovery_1_yards = int(play_arr[0][10])
+
+                if fumble_recovery_1_team == posteam:
+                    solo_tackle_1_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    is_fumble_lost = True
+                    solo_tackle_1_team = posteam
+
+                # solo_tackle_1_player_name = play_arr[0][4]
             elif (
                 "yard gain" in play["description"].lower() or
                 "yards gain" in play["description"].lower()
