@@ -5704,6 +5704,40 @@ def parser(
                     )
             elif (
                 "rush" in play["description"].lower() and
+                "shotgun" in play["description"].lower() and
+                "for gain of 0 yards recovered by" in play["description"].lower()
+            ):
+                is_rush = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) fumbled snap at ([0-9a-zA-Z\-]+) for gain of ([0-9\-]+) yards recovered by ([A-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) rush ([a-z\s]+) for ([0-9\-]+) yards loss to the OTT39 \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
+                )
+                fumbled_1_player_name = play_arr[0][0]
+                fumble_recovery_1_team = play_arr[0][4]
+                fumble_recovery_1_player_name = play_arr[0][1]
+                rusher_player_name = play_arr[0][6]
+                run_location = play_arr[0][7]
+                rushing_yards = int(play_arr[0][8]) * -1
+                yards_gained = rushing_yards
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][9]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+            elif (
+                "rush" in play["description"].lower() and
                 "shotgun" in play["description"].lower()
             ):
                 is_rush = True
@@ -5782,16 +5816,39 @@ def parser(
                     temp_ay = get_yardline(play_arr[0][10], posteam)
                     air_yards = yardline_100 - temp_ay
             elif (
+                "fumbled snap at" in play["description"].lower() and
+                "for gain of" in play["description"].lower() and
                 "pass" in play["description"].lower() and
                 "incomplete" in play["description"].lower()
             ):
                 is_pass = True
                 is_incomplete_pass = True
                 play_arr = re.findall(
-                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) fumbled snap " +
-                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) pass incomplete " +
-                    r"([a-z]+) ([a-z]+) to [\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
-                    r"broken up by [\#0-9]+ ([a-zA-Z\.\s\-\']+)",
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) fumbled snap at ([0-9a-zA-Z\-]+) for gain of ([\-0-9]+) yard[s]? recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) pass incomplete ([a-z]+) ([a-z]+) thrown to ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                fumbled_1_team = posteam
+                fumbled_1_player_name = play_arr[0][0]
+                fumble_recovery_1_team = posteam
+                fumble_recovery_1_player_name = play_arr[0][0]
+
+                passer_player_name = play_arr[0][1]
+                pass_length = play_arr[0][2]
+                pass_location = play_arr[0][3]
+                receiver_player_name = play_arr[0][4]
+
+                pass_defense_1_player_name = play_arr[0][5]
+
+            elif (
+                "fumbled snap at" in play["description"].lower() and
+                "gain of" in play["description"].lower() and
+                "pass" in play["description"].lower() and
+                "incomplete" in play["description"].lower()
+            ):
+                is_pass = True
+                is_incomplete_pass = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) fumbled snap at ([0-9a-zA-Z\-]+) for gain of ([\-0-9]+) yard[s]? recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) pass incomplete ([a-z]+) ([a-z]+) thrown to ([0-9a-zA-Z\-]+)",
                     play["description"]
                 )
                 fumbled_1_team = posteam
@@ -6392,6 +6449,63 @@ def parser(
                     solo_tackle_1_team = posteam
                     assist_tackle_1_team = posteam
                     assist_tackle_2_team = posteam
+            elif (
+                "fumbled by" in play["description"].lower() and
+                "forced by" in play["description"].lower() and
+                play["description"].count("recovered by") == 1
+                and "return" in play["description"].lower()
+                and "advances for loss of" in play["description"].lower()
+                and "touchdown" in play["description"].lower()
+            ):
+                is_fumble_forced = True
+                is_fumble = True
+                is_touchback = True
+                is_return_touchdown = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) forced by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([a-zA-Z{2|3}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) advances for loss of ([\-0-9]+) yards to the ([0-9a-zA-Z\-]+) [TOUCHDOWN|touchdown]+",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][3]
+                return_yards = int(play_arr[0][4])
+                fumbled_1_team = defteam
+                fumbled_1_player_name = play_arr[0][6]
+                forced_fumble_player_1_team = posteam
+                forced_fumble_player_1_player_name = play_arr[0][8]
+
+                fumble_recovery_1_team = play_arr[0][9]
+                if fumble_recovery_1_team == posteam:
+                    is_fumble_lost = True
+
+                fumble_recovery_1_player_name = play_arr[0][10]
+                fumble_recovery_1_yards = play_arr[0][13]
+
+                if fumble_recovery_1_team == posteam:
+                    solo_tackle_1_team = defteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    solo_tackle_1_team = posteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+
+                # tak_arr = re.findall(
+                #     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                #     play_arr[0][14]
+                # )
+                # if len(tak_arr) == 2:
+                #     is_assist_tackle = True
+                #     assist_tackle_1_player_name = tak_arr[0][0]
+                #     assist_tackle_2_player_name = tak_arr[1][0]
+                # elif len(tak_arr) == 1:
+                #     solo_tackle_1_player_name = tak_arr[0]
+                # else:
+                #     raise ValueError(
+                #         f"Unhandled play {play}"
+                #     )
+
+                punt_end_yl = get_yardline(play_arr[0][7], posteam)
             elif (
                 "fumbled by" in play["description"].lower() and
                 "forced by" in play["description"].lower() and
@@ -8973,6 +9087,41 @@ def parser(
                 tak_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
                     play_arr[0][9]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0][0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
+            elif (
+                "blocked by" in play["description"].lower() and
+                "fumbled by" in play["description"].lower() and
+                "forced by" in play["description"].lower() and
+                "recovered by" in play["description"].lower() and
+                "advances for loss of" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) field goal attempt from ([\-0-9]+) yard[s]? NO GOOD blocked by [\#0-9]+ ([a-zA-Z\.\s\-\']+) \(H: [\#0-9]+ ([a-zA-Z\.\s\-\']+), LS: [\#0-9]+ ([a-zA-Z\.\s\-\']+)\), clock ([\:0-9]+) recovered by ([A-Z{2|3}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) forced by [\#0-9]+ ([a-zA-Z\.\-\s\']+) recovered by ([A-Z]{2,4}) [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) advances for loss of ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
+                )
+                kicker_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                field_goal_result = "blocked"
+                blocked_player_name = play_arr[0][2]
+                missed_fg_return_team = play_arr[0][6]
+                missed_fg_return_player_name = play_arr[0][7]
+                missed_fg_return_yards = int(play_arr[0][10])
+
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][20]
                 )
                 if len(tak_arr) == 2:
                     is_assist_tackle = True
