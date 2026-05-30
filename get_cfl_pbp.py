@@ -1121,51 +1121,76 @@ def parser(
                     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete ([a-zA-Z]+) ([a-zA-Z]+) to [\#0-9]+ ([a-zA-Z\.\-\s\']+) caught at ([0-9a-zA-Z\-]+), for ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) forced by [\#0-9]+ ([a-zA-Z\.\-\s\']+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+)return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
                     play["description"]
                 )
-                passer_player_name = play_arr[0][0]
-                pass_length = play_arr[0][1]
-                pass_location = play_arr[0][2]
-                receiver_player_name = play_arr[0][3]
-                temp_ay = get_yardline(play_arr[0][4], posteam)
-                air_yards = yardline_100 - temp_ay
-                passing_yards = int(play_arr[0][5])
-                yards_gained = passing_yards
-                yards_after_catch = passing_yards - air_yards
-
-                fumbled_1_team = posteam
-                fumbled_1_player_name = play_arr[0][7]
-
-                forced_fumble_player_1_team = defteam
-                forced_fumble_player_1_player_name = play_arr[0][9]
-
-                fumble_recovery_1_team = play_arr[0][10]
-                fumble_recovery_1_player_name = play_arr[0][11]
-                fumble_recovery_1_yards = play_arr[0][14]
-
-                if fumble_recovery_1_team == posteam:
-                    solo_tackle_1_team = defteam
-                    assist_tackle_1_team = defteam
-                    assist_tackle_2_team = defteam
-                elif fumble_recovery_1_team == defteam:
-                    is_fumble_lost = True
-                    solo_tackle_1_team = posteam
-                    assist_tackle_1_team = posteam
-                    assist_tackle_2_team = posteam
-
-                tak_arr = re.findall(
-                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
-                    play_arr[0][16]
-                )
-                if len(tak_arr) == 2:
-                    is_assist_tackle = True
-                    assist_tackle_1_player_name = tak_arr[0][0]
-                    assist_tackle_2_player_name = tak_arr[1][0]
-                elif len(tak_arr) == 1:
-                    solo_tackle_1_team = defteam
-                    solo_tackle_1_player_name = tak_arr[0][0]
-                else:
-                    raise ValueError(
-                        f"Unhandled play {play}"
+                if len(play_arr) == 0:
+                    play_arr = re.findall(
+                        r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete ([a-zA-Z]+) ([a-zA-Z]+) to [\#0-9]+ ([a-zA-Z\.\-\s\']+) caught at ([0-9a-zA-Z\-]+), for ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+)? +forced by [\#0-9]+ ([a-zA-Z\.\-\s\']+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+)return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+)",
+                        play["description"]
                     )
+                    passer_player_name = play_arr[0][0]
+                    pass_length = play_arr[0][1]
+                    pass_location = play_arr[0][2]
+                    receiver_player_name = play_arr[0][3]
+                    temp_ay = get_yardline(play_arr[0][4], posteam)
+                    air_yards = yardline_100 - temp_ay
+                    passing_yards = int(play_arr[0][5])
+                    yards_gained = passing_yards
+                    yards_after_catch = passing_yards - air_yards
+
+                    fumbled_1_team = posteam
+                    fumbled_1_player_name = play_arr[0][7]
+
+                    forced_fumble_player_1_team = defteam
+                    forced_fumble_player_1_player_name = play_arr[0][9]
+
+                    fumble_recovery_1_team = play_arr[0][10]
+                    fumble_recovery_1_player_name = play_arr[0][11]
+                    fumble_recovery_1_yards = play_arr[0][14]
+                else: 
+                    passer_player_name = play_arr[0][0]
+                    pass_length = play_arr[0][1]
+                    pass_location = play_arr[0][2]
+                    receiver_player_name = play_arr[0][3]
+                    temp_ay = get_yardline(play_arr[0][4], posteam)
+                    air_yards = yardline_100 - temp_ay
+                    passing_yards = int(play_arr[0][5])
+                    yards_gained = passing_yards
+                    yards_after_catch = passing_yards - air_yards
+
+                    fumbled_1_team = posteam
+                    fumbled_1_player_name = play_arr[0][7]
+
+                    forced_fumble_player_1_team = defteam
+                    forced_fumble_player_1_player_name = play_arr[0][9]
+
+                    fumble_recovery_1_team = play_arr[0][10]
+                    fumble_recovery_1_player_name = play_arr[0][11]
+                    fumble_recovery_1_yards = play_arr[0][14]
+
+                    if fumble_recovery_1_team == posteam:
+                        solo_tackle_1_team = defteam
+                        assist_tackle_1_team = defteam
+                        assist_tackle_2_team = defteam
+                    elif fumble_recovery_1_team == defteam:
+                        is_fumble_lost = True
+                        solo_tackle_1_team = posteam
+                        assist_tackle_1_team = posteam
+                        assist_tackle_2_team = posteam
+
+                    tak_arr = re.findall(
+                        r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                        play_arr[0][16]
+                    )
+                    if len(tak_arr) == 2:
+                        is_assist_tackle = True
+                        assist_tackle_1_player_name = tak_arr[0][0]
+                        assist_tackle_2_player_name = tak_arr[1][0]
+                    elif len(tak_arr) == 1:
+                        solo_tackle_1_team = defteam
+                        solo_tackle_1_player_name = tak_arr[0][0]
+                    else:
+                        raise ValueError(
+                            f"Unhandled play {play}"
+                        )
             elif (
                 "caught at" in play["description"].lower() and
                 "out of bounds" in play["description"].lower() and
@@ -6785,6 +6810,21 @@ def parser(
                 punt_end_yl = get_yardline(play_arr[0][6], posteam)
             elif (
                 "recovered by" in play["description"].lower() and
+                "return" not in play["description"].lower() and
+                "out of bounds at" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+)\, out of bounds at ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][4]
+                return_yards = 0
+
+                punt_end_yl = get_yardline(play_arr[0][6], posteam)
+            elif (
+                "recovered by" in play["description"].lower() and
                 "return" not in play["description"].lower()
             ):
                 play_arr = re.findall(
@@ -8689,6 +8729,8 @@ def parser(
                 kicker_player_name = play_arr[0][0]
                 kick_distance = int(play_arr[0][1])
                 kickoff_end_yl = get_yardline(play_arr[0][3], posteam)
+            elif "delay of game" in play["description"].lower():
+                pass
             else:
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) kickoff ([\-0-9]+) " +
