@@ -534,6 +534,27 @@ def parser(
                     is_fourth_down_converted = True
                 elif (yards_gained < yds_to_go and down == 4):
                     is_fourth_down_failed = True
+            elif (
+                "short to " in play["description"].lower()
+                and
+                "thrown to " in play["description"].lower()
+                and
+                "broken up by " in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass incomplete ([a-zA-Z]+) to [\#0-9]+ ([a-zA-Z\.\-\s\']+) thrown to ([0-9a-zA-Z\-]+) broken up by [\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                pass_length = play_arr[0][1]
+                # pass_location = play_arr[0][2]
+                receiver_player_name = play_arr[0][2]
+                temp_ay = get_yardline(play_arr[0][3], posteam)
+                air_yards = yardline_100 - temp_ay
+                pass_defense_1_player_name = play_arr[0][4]
+
+                del temp_ay
+                del play_arr
             elif "broken up by" in play["description"].lower() and \
                     "thrown to" in play["description"].lower():
                 try:
@@ -3028,10 +3049,19 @@ def parser(
                     r"\(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
                     play["description"]
                 )
+
+                if (
+                    "play overturned" in play["description"].lower()
+                    and
+                    len(tak_arr) == 0
+                ):
+                    continue
+
                 tak_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
                     tak_arr[0]
                 )
+
                 if len(tak_arr) == 2:
                     is_assist_tackle = True
                     assist_tackle_1_player_name = tak_arr[0][0]
