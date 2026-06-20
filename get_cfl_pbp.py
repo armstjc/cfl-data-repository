@@ -2455,7 +2455,7 @@ def parser(
                     r"([a-zA-Z]+) ([a-zA-Z]+) to " +
                     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) for ([\-0-9]+) yard[s]? " +
                     r"to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+) " +
-                    r"open field kick ([\-0-9]) yard[s]? to the " +
+                    r"open field kick ([\-0-9]+) yard[s]? to the " +
                     r"([0-9a-zA-Z\-]+) recovered by ([A-Z{2|3}]+) " +
                     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) " +
                     r"\(([a-zA-Z0-9\#\.\-\s\'\;\,]+)\)",
@@ -6097,11 +6097,32 @@ def parser(
                     )
             elif (
                 "return for loss of" in play["description"].lower() and
+                "blocked by" in play["description"].lower() and
+                "recovered by" in play["description"].lower() and
+                "fumbled by" not in play["description"].lower() and
+                "touchdown" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) blocked by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return for loss of ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) TOUCHDOWN\, clock ([0-9\:]+)",
+                    play["description"]
+                )
+                is_punt_blocked = True
+                is_touchdown = True
+
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                blocked_player_name = play_arr[0][3]
+                # punt_returner_player_name = play_arr[0][4]
+                fumble_recovery_1_team = play_arr[0][4]
+                fumble_recovery_1_player_name = play_arr[0][5]
+                return_yards = int(play_arr[0][8]) * -1
+            elif (
+                "return for loss of" in play["description"].lower() and
                 "recovered by" in play["description"].lower() and
                 "fumbled by" not in play["description"].lower()
             ):
                 play_arr = re.findall(
-                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return for loss of ([\-0-9]) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return for loss of ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
                     play["description"]
                 )
                 punter_player_name = play_arr[0][0]
@@ -6380,7 +6401,7 @@ def parser(
                     r"to the ([0-9a-zA-Z\-]+) recovered by ([a-zA-Z]+) " +
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) " +
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) return " +
-                    r"([\-0-9]) yard[s]? to the ([0-9a-zA-Z\-]+) " +
+                    r"([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) " +
                     r"fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at " +
                     r"([0-9a-zA-Z\-]+) forced by " +
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) " +
@@ -8528,7 +8549,7 @@ def parser(
                 "(" not in penalty_arr.lower()
             ):
                 play_arr = re.findall(
-                    r"([A-Z]{2,4}) ([\s\,a-zA-Z0-9\()]+) ([\-0-9]) yard",
+                    r"([A-Z]{2,4}) ([\s\,a-zA-Z0-9\()]+) ([\-0-9]+) yard",
                     penalty_arr
                 )
                 penalty_team = play_arr[0][0]
