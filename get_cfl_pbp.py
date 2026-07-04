@@ -6819,6 +6819,33 @@ def parser(
             elif (
                 "recovered by" in play["description"].lower() and
                 "return" not in play["description"].lower() and
+                "blocked" in play["description"].lower() and
+                "end of play" in play["description"].lower()
+            ):
+                is_punt_blocked = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) blocked by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+)\, [END|end]+ [OF|of]+ [PLAY|play]+",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                blocked_player_name = play_arr[0][3]
+                fumble_recovery_1_team = play_arr[0][4]
+                fumble_recovery_1_player_name = play_arr[0][5]
+                fumble_recovery_1_yards = 0
+
+                if fumble_recovery_1_team == defteam:
+                    solo_tackle_1_team = posteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+                elif fumble_recovery_1_team == posteam:
+                    solo_tackle_1_team = defteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+
+            elif (
+                "recovered by" in play["description"].lower() and
+                "return" not in play["description"].lower() and
                 "blocked" in play["description"].lower()
             ):
                 is_punt_blocked = True
