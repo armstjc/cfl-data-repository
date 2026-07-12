@@ -6994,28 +6994,57 @@ def parser(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+), End Of Play",
                     play["description"]
                 )
-                punter_player_name = play_arr[0][0]
-                kick_distance = int(play_arr[0][1])
-                punt_returner_player_name = play_arr[0][3]
-                return_yards = int(play_arr[0][4])
 
-                fumbled_1_team = defteam
-                fumbled_1_player_name = play_arr[0][6]
+                if len(play_arr) == 0:
+                    play_arr = re.findall(
+                        r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) recovered by ([A-Z{2,4}]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+), End Of Play",
+                        play["description"]
+                    )
+                    punter_player_name = play_arr[0][0]
+                    kick_distance = int(play_arr[0][1])
+                    punt_returner_player_name = play_arr[0][3]
+                    return_yards = int(play_arr[0][4])
 
-                fumble_recovery_1_team = play_arr[0][8]
-                fumble_recovery_1_player_name = play_arr[0][9]
-                fumble_recovery_1_yards = 0
+                    fumbled_1_team = defteam
+                    fumbled_1_player_name = play_arr[0][6]
 
-                if fumble_recovery_1_team == posteam:
-                    is_fumble_lost = True
-                    solo_tackle_1_team = defteam
-                    assist_tackle_1_team = defteam
-                    assist_tackle_2_team = defteam
-                elif fumble_recovery_1_team == defteam:
-                    solo_tackle_1_team = posteam
-                    assist_tackle_1_team = posteam
-                    assist_tackle_2_team = posteam
-                punt_end_yl = get_yardline(play_arr[0][10], posteam)
+                    fumble_recovery_1_team = play_arr[0][8]
+                    fumble_recovery_1_player_name = play_arr[0][9]
+                    fumble_recovery_1_yards = int(play_arr[0][12])
+
+                    if fumble_recovery_1_team == posteam:
+                        is_fumble_lost = True
+                        solo_tackle_1_team = defteam
+                        assist_tackle_1_team = defteam
+                        assist_tackle_2_team = defteam
+                    elif fumble_recovery_1_team == defteam:
+                        solo_tackle_1_team = posteam
+                        assist_tackle_1_team = posteam
+                        assist_tackle_2_team = posteam
+                    punt_end_yl = get_yardline(play_arr[0][10], posteam)
+                else:
+                    punter_player_name = play_arr[0][0]
+                    kick_distance = int(play_arr[0][1])
+                    punt_returner_player_name = play_arr[0][3]
+                    return_yards = int(play_arr[0][4])
+
+                    fumbled_1_team = defteam
+                    fumbled_1_player_name = play_arr[0][6]
+
+                    fumble_recovery_1_team = play_arr[0][8]
+                    fumble_recovery_1_player_name = play_arr[0][9]
+                    fumble_recovery_1_yards = 0
+
+                    if fumble_recovery_1_team == posteam:
+                        is_fumble_lost = True
+                        solo_tackle_1_team = defteam
+                        assist_tackle_1_team = defteam
+                        assist_tackle_2_team = defteam
+                    elif fumble_recovery_1_team == defteam:
+                        solo_tackle_1_team = posteam
+                        assist_tackle_1_team = posteam
+                        assist_tackle_2_team = posteam
+                    punt_end_yl = get_yardline(play_arr[0][10], posteam)
             elif (
                 "fumbled by" in play["description"].lower() and
                 "recovered by" in play["description"].lower() and
