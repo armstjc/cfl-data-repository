@@ -1,0 +1,6 @@
+pandas>=3.0.3
+pyarrow>=25.0.0
+tqdm>=4.69.0
+requests>=2.34.2
+beautifulsoup4>=4.15.0
+lxml>=4.15.0

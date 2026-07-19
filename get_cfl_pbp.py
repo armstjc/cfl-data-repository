@@ -8396,6 +8396,26 @@ def parser(
                 return_yards = int(play_arr[0][4])
             elif (
                 "return" in play["description"].lower() and
+                "lateral to" in play["description"].lower() and
+                "), out of bounds" in play["description"].lower()
+            ):
+                is_punt_out_of_bounds = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) lateral to [\#0-9]+ ([a-zA-Z\.\s\-\']+) for ([\-0-9]+) yard[s]? gain to the ([0-9a-zA-Z\-]+) \([\#0-9]+ ([a-zA-Z\.\s\-\']+)\), out of bounds",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                punt_returner_player_name = play_arr[0][3]
+                return_yards = int(play_arr[0][4])
+
+                lateral_punt_returner_player_name = play_arr[0][6]
+                lateral_return_yards = int(play_arr[0][7])
+
+                solo_tackle_1_team = posteam
+                solo_tackle_1_player_name = play_arr[0][9]
+            elif (
+                "return" in play["description"].lower() and
                 "), out of bounds" in play["description"].lower()
             ):
                 is_punt_out_of_bounds = True
@@ -8874,6 +8894,18 @@ def parser(
                 kickoff_returner_player_name = play_arr[0][3]
                 return_yards = play_arr[0][4]
                 solo_tackle_1_player_name = play_arr[0][7]
+                kickoff_end_yl = get_yardline(play_arr[0][5], posteam)
+            elif (
+                "out of bounds at" in play["description"].lower() and
+                "return" in play["description"].lower() and
+                "illegal kickoff" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) kickoff ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+)  ?return ([\-0-9]+) yards to the ([0-9a-zA-Z\-]+), out of bounds at ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                kicker_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
                 kickoff_end_yl = get_yardline(play_arr[0][5], posteam)
             elif (
                 "out of bounds at" in play["description"].lower() and
