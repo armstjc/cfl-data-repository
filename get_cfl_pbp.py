@@ -8122,6 +8122,21 @@ def parser(
                 punt_returner_player_name = play_arr[0][4]
                 return_yards = int(play_arr[0][7])
             elif (
+                "blocked by" in play["description"].lower() and
+                "recovered by" in play["description"].lower() and
+                "touchdown nullified by penalty" in play["description"].lower()
+            ):
+                # is_punt_out_of_bounds = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) blocked by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) TOUCHDOWN nullified by penalty",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                blocked_player_name = play_arr[0][3]
+                fumble_recovery_1_team = play_arr[0][4]
+                fumble_recovery_1_player_name = play_arr[0][6]
+            elif (
                 "recovered by" in play["description"].lower() and
                 "touchdown" in play["description"].lower()
             ):
