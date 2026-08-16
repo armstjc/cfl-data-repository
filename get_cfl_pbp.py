@@ -8616,18 +8616,9 @@ def parser(
                         r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([0-9\-]+) yard[s]? to the ([0-9a-zA-Z\-]+) [SINGLE|single]+ nullified by penalty",
                         play["description"]
                     )
-<<<<<<< HEAD
                     punt_returner_player_name = play_arr[0][3]
                 punter_player_name = play_arr[0][0]
                 kick_distance = int(play_arr[0][1])
-=======
-                    punter_player_name = play_arr[0][0]
-                    kick_distance = int(play_arr[0][1])
-                    punt_returner_player_name = play_arr[0][3]
-                else:
-                    punter_player_name = play_arr[0][0]
-                    kick_distance = int(play_arr[0][1])
->>>>>>> 11c841e04317b99158de92331b1ec147379ad82c
             elif "single nullified by penalty" in play["description"].lower():
                 play_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [SINGLE|single]+ nullified by penalty",
