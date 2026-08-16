@@ -1309,6 +1309,33 @@ def parser(
             elif (
                 "caught at" in play["description"].lower() and
                 "fumbled by" in play["description"].lower() and
+                "recovered by" in play["description"].lower() and
+                "return" in play["description"].lower() and
+                "out of bounds" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete ([a-zA-Z]+) ([a-zA-Z]+) to [\#0-9]+ ([a-zA-Z\.\-\s\']+) caught at ([0-9a-zA-Z\-]+), for ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) recovered by ([A-Z]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+) return ([0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+)\, out of bounds at ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                pass_length = play_arr[0][1]
+                pass_location = play_arr[0][2]
+                receiver_player_name = play_arr[0][3]
+                temp_ay = get_yardline(play_arr[0][4], posteam)
+                air_yards = yardline_100 - temp_ay
+                passing_yards = int(play_arr[0][5])
+                yards_after_catch = passing_yards - air_yards
+                yards_gained = passing_yards
+
+                fumbled_1_team = posteam
+                fumbled_1_player_name = play_arr[0][7]
+
+                fumble_recovery_1_team = play_arr[0][9]
+                fumble_recovery_1_player_name = play_arr[0][10]
+                fumble_recovery_1_yards = int(play_arr[0][13])
+            elif (
+                "caught at" in play["description"].lower() and
+                "fumbled by" in play["description"].lower() and
                 "forced by" in play["description"].lower() and
                 "recovered by" in play["description"].lower() and
                 "advances" in play["description"].lower() and
@@ -8123,6 +8150,24 @@ def parser(
                 return_yards = int(play_arr[0][7])
             elif (
                 "recovered by" in play["description"].lower() and
+                "blocked by" in play["description"].lower() and
+                "touchdown" in play["description"].lower()
+            ):
+                is_return_touchdown = True
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) blocked by [\#0-9]+ ([a-zA-Z\.\s\-\']+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) TOUCHDOWN",
+                    play["description"]
+                )
+                punter_player_name = play_arr[0][0]
+                kick_distance = int(play_arr[0][1])
+                blocked_player_name = play_arr[0][3]
+                fumble_recovery_1_team = play_arr[0][4]
+                fumble_recovery_1_player_name = play_arr[0][5]
+                return_yards = 0
+                td_team = play_arr[0][4]
+                td_player_name = punt_returner_player_name
+            elif (
+                "recovered by" in play["description"].lower() and
                 "touchdown" in play["description"].lower()
             ):
                 is_return_touchdown = True
@@ -8551,6 +8596,12 @@ def parser(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+)  ?return ([0-9\-]+) yard[s]? to the ([0-9a-zA-Z\-]+) [SINGLE|single]+ nullified by penalty",
                     play["description"]
                 )
+                if len(play_arr) == 0:
+                    play_arr = re.findall(
+                        r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) punt ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([0-9\-]+) yard[s]? to the ([0-9a-zA-Z\-]+) [SINGLE|single]+ nullified by penalty",
+                        play["description"]
+                    )
+                    punt_returner_player_name = play_arr[0][3]
                 punter_player_name = play_arr[0][0]
                 kick_distance = int(play_arr[0][1])
             elif "single nullified by penalty" in play["description"].lower():
