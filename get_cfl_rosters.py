@@ -47,11 +47,11 @@ def get_cfl_rosters():
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/138.0.0.0 Safari/537.36",
+        + "Chrome/152.0.0.0 Safari/537.36",
     }
     # rosters_df = pd.DataFrame()
     schedule_df = get_cfl_schedules(season)
-    schedule_df = schedule_df[schedule_df["eventStatus_name"] != "Pre-Game"]
+    schedule_df = schedule_df[schedule_df["game_status"] != "Pre-Game"]
     # game_types_arr = schedule_df.to_list()
     # if "Regular Season" in game_types_arr:
     #     week = 0
@@ -151,7 +151,7 @@ def get_stats_crew_cfl_rosters(season: int):
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/138.0.0.0 Safari/537.36",
+        + "Chrome/152.0.0.0 Safari/537.36",
     }
 
     # now = datetime.now()

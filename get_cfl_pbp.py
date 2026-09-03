@@ -10982,7 +10982,7 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/138.0.0.0 Safari/537.36",
+        + "Chrome/152.0.0.0 Safari/537.36",
     }
     home_opening_kickoff = False
 
@@ -11150,7 +11150,7 @@ def get_cfl_season_pbp_data(season: int) -> pd.DataFrame:
         logging.info("`./pbp` already exists.")
 
     schedule_df = get_cfl_schedules(season=season)
-    schedule_df = schedule_df[schedule_df["eventStatus_name"] != "Pre-Game"]
+    schedule_df = schedule_df[schedule_df["game_status"] != "Pre-Game"]
 
     fixture_ids_arr = schedule_df["fixtureId"].to_numpy()
     season_types_arr = schedule_df["eventTypeName"].to_numpy()
