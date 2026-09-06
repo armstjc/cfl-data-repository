@@ -1395,6 +1395,37 @@ def parser(
             elif (
                 "caught at" in play["description"].lower() and
                 "fumbled by" in play["description"].lower() and
+                # "forced by" in play["description"].lower() and
+                "recovered by" in play["description"].lower() and
+                "advances" in play["description"].lower() and
+                "out of bounds" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+) pass complete ([a-zA-Z]+) ([a-zA-Z]+) to [\#0-9]+ ([a-zA-Z\.\-\s\']+) caught at ([0-9a-zA-Z\-]+), for ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) fumbled by [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) recovered by ([A-Z]+) [\#0-9]+ ([a-zA-Z\.\-\s\']+) at ([0-9a-zA-Z\-]+) advances ([0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+)\, out of bounds at ([0-9a-zA-Z\-]+)",
+                    play["description"]
+                )
+                passer_player_name = play_arr[0][0]
+                pass_length = play_arr[0][1]
+                pass_location = play_arr[0][2]
+                receiver_player_name = play_arr[0][3]
+                temp_ay = get_yardline(play_arr[0][4], posteam)
+                air_yards = yardline_100 - temp_ay
+                passing_yards = int(play_arr[0][5])
+                yards_after_catch = passing_yards - air_yards
+                yards_gained = passing_yards
+
+                fumbled_1_team = posteam
+                fumbled_1_player_name = play_arr[0][7]
+
+                # forced_fumble_player_1_team = defteam
+                # forced_fumble_player_1_player_name = play_arr[0][9]
+
+                fumble_recovery_1_team = play_arr[0][9]
+                fumble_recovery_1_player_name = play_arr[0][10]
+                fumble_recovery_1_yards = int(play_arr[0][12])
+            elif (
+                "caught at" in play["description"].lower() and
+                "fumbled by" in play["description"].lower() and
                 "forced by" in play["description"].lower() and
                 "recovered by" in play["description"].lower() and
                 "advances" in play["description"].lower() and
@@ -4971,6 +5002,42 @@ def parser(
                 yards_gained = rushing_yards
                 solo_tackle_1_team = defteam
                 solo_tackle_1_player_name = play_arr[0][3]
+            elif (
+                (
+                    "yard gain" in play["description"].lower() or
+                    "yards gain" in play["description"].lower()
+                )
+                and "open field kick" in play["description"].lower()
+                and "recovered by " in play["description"].lower()
+                and "return" in play["description"].lower()
+            ):
+                play_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) rush ([a-zA-Z]+) for " +
+                    r"([\-0-9]+) yard[s]? gain to the ([0-9a-zA-Z\-]+) " +
+                    r"\(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    play["description"]
+                )
+                rusher_player_name = play_arr[0][0]
+                run_location = play_arr[0][1]
+                rushing_yards = int(play_arr[0][2])
+                yards_gained = rushing_yards
+                tak_arr = re.findall(
+                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                    play_arr[0][4]
+                )
+                if len(tak_arr) == 2:
+                    is_assist_tackle = True
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                    assist_tackle_1_player_name = tak_arr[0][0]
+                    assist_tackle_2_player_name = tak_arr[1][0]
+                elif len(tak_arr) == 1:
+                    solo_tackle_1_team = defteam
+                    solo_tackle_1_player_name = tak_arr[0]
+                else:
+                    raise ValueError(
+                        f"Unhandled play {play}"
+                    )
             elif (
                 "yard gain" in play["description"].lower() or
                 "yards gain" in play["description"].lower()

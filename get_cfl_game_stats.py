@@ -13,7 +13,7 @@ from get_schedules import get_cfl_schedules
 
 def player_parser(data: dict) -> pd.DataFrame:
     """ """
-    pd.set_option('future.no_silent_downcasting', True)
+    # pd.set_option('future.no_silent_downcasting', True)
     # print(data)
     # passing
     columns_arr = [
@@ -459,7 +459,7 @@ def player_parser(data: dict) -> pd.DataFrame:
         ].str.split("/", expand=True)
         passing_df["player_jersey_number"] = passing_df[
             "player_jersey_number"
-        ].infer_objects(copy=False).fillna(0)
+        ].infer_objects().fillna(0)
         passing_df = passing_df.astype(
             {
                 "player_jersey_number": "uint8",
@@ -489,7 +489,7 @@ def player_parser(data: dict) -> pd.DataFrame:
         rushing_df = pd.concat(rushing_df_arr, ignore_index=True)
         rushing_df["player_jersey_number"] = rushing_df[
             "player_jersey_number"
-        ].infer_objects(copy=False).fillna(0)
+        ].infer_objects().fillna(0)
         rushing_df = rushing_df.astype(
             {
                 "player_jersey_number": "uint8",
@@ -506,7 +506,7 @@ def player_parser(data: dict) -> pd.DataFrame:
         # print(receiving_df.columns)
         receiving_df["player_jersey_number"] = receiving_df[
             "player_jersey_number"
-        ].infer_objects(copy=False).fillna(0)
+        ].infer_objects().fillna(0)
         receiving_df = receiving_df.astype(
             {
                 "player_jersey_number": "uint8",
@@ -541,7 +541,7 @@ def player_parser(data: dict) -> pd.DataFrame:
         defense_df = pd.concat(defense_df_arr, ignore_index=True)
         defense_df["player_jersey_number"] = defense_df[
             "player_jersey_number"
-        ].infer_objects(copy=False).fillna(0)
+        ].infer_objects().fillna(0)
         defense_df = defense_df.astype(
             {
                 "player_jersey_number": "uint8",
@@ -552,7 +552,7 @@ def player_parser(data: dict) -> pd.DataFrame:
         kicking_df = pd.concat(kicking_df_arr, ignore_index=True)
         kicking_df["player_jersey_number"] = kicking_df[
             "player_jersey_number"
-        ].infer_objects(copy=False).fillna(0)
+        ].infer_objects().fillna(0)
         kicking_df[["kicking_FGM", "kicking_FGA"]] = kicking_df[
             "kicking_FG"
         ].str.split("/", expand=True)
@@ -577,7 +577,7 @@ def player_parser(data: dict) -> pd.DataFrame:
         kickoffs_df = pd.concat(kickoffs_df_arr, ignore_index=True)
         kickoffs_df["player_jersey_number"] = kickoffs_df[
             "player_jersey_number"
-        ].infer_objects(copy=False).fillna(0)
+        ].infer_objects().fillna(0)
         kickoffs_df = kickoffs_df.astype(
             {
                 "player_jersey_number": "uint8",
@@ -597,7 +597,7 @@ def player_parser(data: dict) -> pd.DataFrame:
         punting_df = pd.concat(punting_df_arr, ignore_index=True)
         punting_df["player_jersey_number"] = punting_df[
             "player_jersey_number"
-        ].infer_objects(copy=False).fillna(0)
+        ].infer_objects().fillna(0)
         punting_df = punting_df.astype(
             {
                 "player_jersey_number": "uint8",
@@ -618,7 +618,7 @@ def player_parser(data: dict) -> pd.DataFrame:
         kick_return_df = pd.concat(kick_return_df_arr, ignore_index=True)
         kick_return_df["player_jersey_number"] = kick_return_df[
             "player_jersey_number"
-        ].infer_objects(copy=False).fillna(0)
+        ].infer_objects().fillna(0)
         kick_return_df = kick_return_df.astype(
             {
                 "player_jersey_number": "uint8",
@@ -641,7 +641,7 @@ def player_parser(data: dict) -> pd.DataFrame:
         punt_return_df = pd.concat(punt_return_df_arr, ignore_index=True)
         punt_return_df["player_jersey_number"] = punt_return_df[
             "player_jersey_number"
-        ].infer_objects(copy=False).fillna(0)
+        ].infer_objects().fillna(0)
         punt_return_df = punt_return_df.astype(
             {
                 "player_jersey_number": "uint8",
@@ -784,7 +784,7 @@ def get_cfl_player_game_stats(season: int) -> pd.DataFrame:
     stats_df_arr = []
     schedule_df = get_cfl_schedules(season=season)
     schedule_df = schedule_df[
-        (schedule_df["team_1_score"] > 0) | (schedule_df["team_2_score"] > 0)
+        (schedule_df["away_team_score"] > 0) | (schedule_df["home_team_score"] > 0)
     ]
     # schedule_df = schedule_df[(schedule_df["eventTypeName"] != "Preseason")]
     schedule_df = schedule_df.dropna(subset=["fixtureId"])
@@ -793,7 +793,7 @@ def get_cfl_player_game_stats(season: int) -> pd.DataFrame:
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
         + "Chrome/152.0.0.0 Safari/537.36",
     }
-    game_ids_arr = schedule_df["eventId"].to_list()
+    game_ids_arr = schedule_df["genius_sports_id"].to_list()
     fixture_ids_arr = schedule_df["fixtureId"].to_list()
     season_type_arr = schedule_df["eventTypeName"].to_list()
 
@@ -886,7 +886,7 @@ def get_cfl_team_game_stats(season: int) -> pd.DataFrame:
     temp_df = pd.DataFrame()
     schedule_df = get_cfl_schedules(season=season)
     schedule_df = schedule_df[
-        (schedule_df["team_1_score"] > 0) | (schedule_df["team_2_score"] > 0)
+        (schedule_df["away_team_score"] > 0) | (schedule_df["home_team_score"] > 0)
     ]
     # schedule_df = schedule_df[(schedule_df["eventTypeName"] != "Preseason")]
     schedule_df = schedule_df.dropna(subset=["fixtureId"])
@@ -895,7 +895,7 @@ def get_cfl_team_game_stats(season: int) -> pd.DataFrame:
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
         + "Chrome/152.0.0.0 Safari/537.36",
     }
-    game_ids_arr = schedule_df["eventId"].to_list()
+    game_ids_arr = schedule_df["genius_sports_id"].to_list()
     fixture_ids_arr = schedule_df["fixtureId"].to_list()
     season_type_arr = schedule_df["eventTypeName"].to_list()
 
