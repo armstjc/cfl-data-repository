@@ -10,6 +10,7 @@ import requests
 from bs4 import BeautifulSoup
 from tqdm import tqdm
 
+from get_cfl_standings import get_cfl_standings
 from get_schedules import get_cfl_schedules
 
 
@@ -23,8 +24,39 @@ def parse_cfl_player_url(player_url: str) -> int:
     return player_id
 
 
+def get_cfl_team_roster(team_id: int) -> pd.DataFrame:
+    """ """
+    url = (
+        "https://cfl.ca/api/v1/content/data/players?limit=10000&" +
+        f"team_id={team_id}&active_only=true"
+    )
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
+        + " AppleWebKit/537.36 (KHTML, like Gecko) "
+        + "Chrome/152.0.0.0 Safari/537.36",
+    }
+
+    response = requests.get(url=url, headers=headers)
+    time.sleep(2)
+
+    json_data = json.loads(response.text)
+
+    roster_df = pd.json_normalize(
+        json_data["players"]
+    )
+    return roster_df
+
+
 def get_cfl_rosters():
     """ """
+    now = datetime.now()
+    players_df = pd.DataFrame()
+    players_df_arr = []
+
+    season = now.year
+    if now.month < 5:
+        season -= 1
+
     try:
         os.mkdir("rosters")
     except FileExistsError:
@@ -35,27 +67,9 @@ def get_cfl_rosters():
     except FileExistsError:
         logging.info("`./weekly` already exists.")
 
-    now = datetime.now()
-    season = now.year
-
-    if now.month < 5:
-        season -= 1
-    url = (
-        "https://www.cfl.ca/wp-content/themes/cfl.ca/inc/"
-        + "admin-ajax.php?action=get_all_players"
-    )
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
-        + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/152.0.0.0 Safari/537.36",
-    }
-    # rosters_df = pd.DataFrame()
-    schedule_df = get_cfl_schedules(season)
+    standings_df = get_cfl_standings(season=season)
+    schedule_df = get_cfl_schedules(season=season)
     schedule_df = schedule_df[schedule_df["game_status"] != "Pre-Game"]
-    # game_types_arr = schedule_df.to_list()
-    # if "Regular Season" in game_types_arr:
-    #     week = 0
-    # schedule_df = schedule_df[schedule_df["eventTypeName"] != "Preseason"]
 
     if "Preseason" in schedule_df["eventTypeName"].iloc[-1]:
         week = 0
@@ -68,65 +82,21 @@ def get_cfl_rosters():
     else:
         week = max(schedule_df["week"].to_list()) + 1
 
-    response = requests.get(url=url, headers=headers)
+    team_ids_arr = standings_df["team_id"].to_list()
 
-    json_data = json.loads(response.text)
-    json_data = json_data["data"]
-    players_df = pd.DataFrame(
-        data=json_data,
-        columns=[
-            "jersey_num",
-            "player_name",
-            "current_team_abv",
-            "position",
-            "import_status",
-            "height",
-            "weight",
-            "age",
-            "college",
-            "player_url",
-        ],
-    )
-    players_df["jersey_num"] = pd.to_numeric(
-        players_df["jersey_num"],
-        errors="coerce"
-    )
-    players_df["weight"] = pd.to_numeric(players_df["weight"], errors="coerce")
-    players_df["age"] = pd.to_numeric(players_df["age"], errors="coerce")
-    players_df = players_df.replace(r"^\s*$", np.nan, regex=True)
-    players_df = players_df.astype(
-        {
-            # "jersey_num": "uint16",
-            "player_name": "string",
-            "current_team_abv": "string",
-            "position": "string",
-            "import_status": "string",
-            "height": "string",
-            # "weight": "uint16",
-            # "age": "uint16",
-            "college": "string",
-            "player_url": "string",
-        }
-    )
-    players_df = players_df.sort_values(
-        ["current_team_abv", "jersey_num", "player_url"]
-    )
-    players_df["player_id"] = players_df["player_url"].map(
-        lambda x: parse_cfl_player_url(x)
-    )
-    players_df.loc[
-        players_df["player_id"] != 0,
-        "last_updated"
-    ] = now.isoformat()
+    for team_id in team_ids_arr:
+        temp_df = get_cfl_team_roster(team_id=team_id)
+        players_df_arr.append(temp_df)
 
-    players_df = players_df.replace(r"^\s*$", np.nan, regex=True)
-    rosters_df = players_df.dropna(subset=["current_team_abv"])
-    players_df.loc[players_df["player_id"] != 0, "season"] = season
+        del temp_df
 
-    players_df.to_csv("rosters/cfl_players.csv", index=False)
+    rosters_df = pd.concat(players_df_arr, ignore_index=True)
+    # players_df.loc[players_df["player_id"] != 0, "season"] = season
+
+    # players_df.to_csv("rosters/cfl_players.csv", index=False)
 
     rosters_df.to_csv(f"rosters/{now.year}_cfl_rosters.csv", index=False)
-    rosters_df.loc[players_df["player_id"] != 0, "week"] = week
+    rosters_df.loc["week"] = week
 
     rosters_df.to_csv(
         f"rosters/weekly/{now.year}-{week:02d}_cfl_weekly_rosters.csv",

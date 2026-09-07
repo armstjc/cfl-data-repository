@@ -5012,23 +5012,35 @@ def parser(
                 and "return" in play["description"].lower()
             ):
                 play_arr = re.findall(
-                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) rush ([a-zA-Z]+) for " +
-                    r"([\-0-9]+) yard[s]? gain to the ([0-9a-zA-Z\-]+) " +
-                    r"\(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                    r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) rush ([a-zA-Z]+) for ([\-0-9]+) yard[s]? gain to the ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) open field kick ([0-9\-]+) yard[s]? to the ([0-9a-zA-Z\-]+) recovered by ([a-zA-Z]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;\,]+)\)",
                     play["description"]
                 )
                 rusher_player_name = play_arr[0][0]
                 run_location = play_arr[0][1]
                 rushing_yards = int(play_arr[0][2])
                 yards_gained = rushing_yards
+                punter_player_name = play_arr[0][4]
+                kick_distance = int(play_arr[0][5])
+                fumble_recovery_1_team = play_arr[0][7]
+                fumble_recovery_1_player_name = play_arr[0][8]
+                fumble_recovery_1_yards = int(play_arr[0][11])
+
+                if fumble_recovery_1_team == posteam:
+                    solo_tackle_1_team = defteam
+                    assist_tackle_1_team = defteam
+                    assist_tackle_2_team = defteam
+                elif fumble_recovery_1_team == defteam:
+                    is_fumble_lost = True
+                    solo_tackle_1_team = posteam
+                    assist_tackle_1_team = posteam
+                    assist_tackle_2_team = posteam
+
                 tak_arr = re.findall(
                     r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
-                    play_arr[0][4]
+                    play_arr[0][13]
                 )
                 if len(tak_arr) == 2:
                     is_assist_tackle = True
-                    assist_tackle_1_team = defteam
-                    assist_tackle_2_team = defteam
                     assist_tackle_1_player_name = tak_arr[0][0]
                     assist_tackle_2_player_name = tak_arr[1][0]
                 elif len(tak_arr) == 1:

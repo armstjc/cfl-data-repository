@@ -77,27 +77,27 @@ def get_cfl_transactions(season: int) -> pd.DataFrame:
     transactions_df = pd.DataFrame()
     # transaction_df_arr = []
     url = (
-        "https://www.cfl.ca/wp-content/themes/cfl.ca/inc/admin-ajax.php?"
-        + f"action=get_transactions&season={season}"
+        "https://api.stats.cfl.ca/transactions/neg-list"
     )
 
     response = requests.get(url=url, headers=headers)
 
     json_data = json.loads(response.text)
-    json_data = json_data["data"]
-    transactions_df = pd.DataFrame(
-        data=json_data,
-        columns=[
-            "date",
-            "team_id",
-            "player_html",
-            "position",
-            "status",
-            "college",
-            "transaction_id",
-            "transaction_desc",
-        ],
-    )
+    # json_data = json_data["data"]
+    # transactions_df = pd.DataFrame(
+    #     data=json_data,
+    #     columns=[
+    #         "date",
+    #         "team_id",
+    #         "player_html",
+    #         "position",
+    #         "status",
+    #         "college",
+    #         "transaction_id",
+    #         "transaction_desc",
+    #     ],
+    # )
+    transactions_df = pd.json_normalize(json_data)
     transactions_df["player_id"] = transactions_df["player_html"].map(
         lambda x: parse_player_id(x)
     )
