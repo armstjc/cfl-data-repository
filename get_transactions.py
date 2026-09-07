@@ -98,15 +98,18 @@ def get_cfl_transactions(season: int) -> pd.DataFrame:
     #     ],
     # )
     transactions_df = pd.json_normalize(json_data)
-    transactions_df["player_id"] = transactions_df["player_html"].map(
-        lambda x: parse_player_id(x)
+    transactions_df["full_name"] = (
+        transactions_df["firstname"] + " " + transactions_df["lastname"]
     )
-    transactions_df["player_name"] = transactions_df["player_html"].map(
-        lambda x: parse_player_name(x)
-    )
-    transactions_df = transactions_df.drop(
-        columns=["player_html"]
-    )
+    # transactions_df["player_id"] = transactions_df["full_name"].map(
+    #     lambda x: parse_player_id(x)
+    # )
+    # transactions_df["player_name"] = transactions_df["full_name"].map(
+    #     lambda x: parse_player_name(x)
+    # )
+    # transactions_df = transactions_df.drop(
+    #     columns=["player_html"]
+    # )
     print(transactions_df)
     # transactions_df.to_csv("test.csv", index=False)
     # print(json_data)
