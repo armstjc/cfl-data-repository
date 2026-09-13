@@ -83,7 +83,7 @@ def get_cfl_schedules(season: int) -> pd.DataFrame:
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/152.0.0.0 Safari/537.36",
+        + "chrome/153.0.0.0 Safari/537.36",
     }
     response = requests.get(url=url, headers=headers)
     json_data = json.loads(response.text)

@@ -106,6 +106,7 @@ def get_player_chain(
 def parser(
     pbp_data: dict,
     # quarter_num: int,
+    game_details: dict,
     away_team_abv: str,
     away_team_id: int,
     home_team_abv: str,
@@ -118,6 +119,9 @@ def parser(
     pbp_df = pd.DataFrame()
     pbp_df_arr = []
     temp_df = pd.DataFrame()
+
+    away_competitor_id = game_details["data"]["details"]["awayTeam"]["competitorId"]
+    home_competitor_id = game_details["data"]["details"]["homeTeam"]["competitorId"]
 
     posteam = ""
     defteam = ""
@@ -289,7 +293,7 @@ def parser(
         # defteam_score = defteam_score_post
         # score_differential = score_differential_post
 
-        if play["teamId"] == home_team_id:
+        if play["teamId"] == home_competitor_id:
             posteam = home_team_abv
             defteam = away_team_abv
             posteam_score = total_home_score
@@ -298,7 +302,7 @@ def parser(
             posteam_score_post = posteam_score
             defteam_score_post = defteam_score
             posteam_type = "home"
-        elif play["teamId"] == away_team_id:
+        elif play["teamId"] == away_competitor_id:
             posteam = away_team_abv
             defteam = home_team_abv
             posteam_score = total_away_score
@@ -330,7 +334,7 @@ def parser(
         del play_id_raw
         del p_id_2
 
-        if drive_num == 0 and play["teamId"] == home_team_id:
+        if drive_num == 0 and play["teamId"] == home_competitor_id:
             home_opening_kickoff = True
         # else:
         #     home_opening_kickoff = False
@@ -376,16 +380,19 @@ def parser(
         elif int(play["phaseQualifier"]) >= 3:
             game_half = "Half2"
 
-        time = play["clock"]
-        if play["id"] == "0-1" and len(time) == 0:
-            time = "15:00"
-        if len(time) > 0:
-            time_min, time_sec = time.split(":")
-            time_min = int(time_min)
-            time_sec = int(time_sec)
+        time = play.get("clock")
+        if time is None:
+            pass
         else:
-            time_min = None
-            time_sec = None
+            if play["id"] == "0-1" and len(time) == 0:
+                time = "15:00"
+            if len(time) > 0:
+                time_min, time_sec = time.split(":")
+                time_min = int(time_min)
+                time_sec = int(time_sec)
+            else:
+                time_min = None
+                time_sec = None
 
         if "out of bounds" in play["description"].lower():
             is_out_of_bounds = True
@@ -3033,14 +3040,28 @@ def parser(
                     r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) pass intercepted by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) broken up by [\#0-9]+ ([a-zA-Z\.\s\-\']+) [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
                     play["description"]
                 )
-                passer_player_name = play_arr[0][0]
-                interception_player_name = play_arr[0][1]
-                pass_defense_1_player_name = play_arr[0][3]
-                return_yards = int(play_arr[0][5])
-                tak_arr = re.findall(
-                    r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
-                    play_arr[0][7]
-                )
+                if len(play_arr) == 0:
+                    play_arr = re.findall(
+                        r"[\#0-9]+ ([a-zA-Z\.\s\-\']+) pass intercepted by [\#0-9]+ ([a-zA-Z\.\s\-\']+) at ([0-9a-zA-Z\-]+) broken up by [\#0-9]+ ([a-zA-Z\.\s\-\']+) return ([\-0-9]+) yard[s]? to the ([0-9a-zA-Z\-]+) \(([a-zA-Z0-9\#\.\-\s\'\;]+)\)",
+                        play["description"]
+                    )
+                    passer_player_name = play_arr[0][0]
+                    interception_player_name = play_arr[0][1]
+                    pass_defense_1_player_name = play_arr[0][3]
+                    return_yards = int(play_arr[0][4])
+                    tak_arr = re.findall(
+                        r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                        play_arr[0][6]
+                    )
+                else:
+                    passer_player_name = play_arr[0][0]
+                    interception_player_name = play_arr[0][1]
+                    pass_defense_1_player_name = play_arr[0][3]
+                    return_yards = int(play_arr[0][5])
+                    tak_arr = re.findall(
+                        r"[\#0-9]+ ([a-zA-Z\.\-\s\']+)",
+                        play_arr[0][7]
+                    )
                 if len(tak_arr) == 2:
                     is_assist_tackle = True
                     assist_tackle_1_team = posteam
@@ -3374,7 +3395,7 @@ def parser(
                     safety_player_name = play_arr[0]
         elif (
             play["type"].lower() == "sack" and
-            play["subType"] is None
+            play.get("subType") is None
         ):
             is_qb_dropback = True
             is_pass = True
@@ -3627,7 +3648,7 @@ def parser(
         # Rushing
         elif (
             play["type"].lower() == "run" and
-            play["subType"] is None
+            play.get("subType") is None
         ):
             is_scrimmage_play = True
             is_rush = True
@@ -5776,7 +5797,7 @@ def parser(
 
         elif (
             play["type"].lower() == "kneel" and
-            play["subType"] is None
+            play.get("subType") is None
         ):
             is_qb_kneel = True
             is_scrimmage_play = True
@@ -5839,7 +5860,7 @@ def parser(
         # Fumble
         elif (
             play["type"].lower() == "fumble" and
-            play["subType"] is None
+            play.get("subType") is None
         ):
             is_scrimmage_play = True
             is_aborted_play = True
@@ -6261,7 +6282,7 @@ def parser(
         # Punting
         elif (
             play["type"].lower() == "punt" and
-            play["subType"] is None
+            play.get("subType") is None
         ):
             is_punt = True
             is_special_teams_play = True
@@ -8928,7 +8949,7 @@ def parser(
         # Kickoff
         elif (
             play["type"].lower() == "kickoff"
-            and play["subType"] is None
+            and play.get("subType") is None
         ):
             is_kickoff_attempt = True
             is_special_teams_play = True
@@ -9034,10 +9055,10 @@ def parser(
             if "downed" in play["description"].lower():
                 is_kickoff_downed = True
 
-            if play["teamId"] == home_team_id:
+            if play["teamId"] == home_competitor_id:
                 return_team = home_team_abv
                 solo_tackle_1_team = away_team_abv
-            elif play["teamId"] == away_team_id:
+            elif play["teamId"] == away_competitor_id:
                 return_team = away_team_abv
                 solo_tackle_1_team = home_team_abv
             else:
@@ -9149,10 +9170,10 @@ def parser(
                 solo_tackle_1_player_name = play_arr[0][7]
                 kickoff_end_yl = get_yardline(play_arr[0][4], posteam)
 
-            if play["teamId"] == home_team_id:
+            if play["teamId"] == home_competitor_id:
                 return_team = home_team_abv
                 solo_tackle_1_team = away_team_abv
-            elif play["teamId"] == away_team_id:
+            elif play["teamId"] == away_competitor_id:
                 return_team = away_team_abv
                 solo_tackle_1_team = home_team_abv
             else:
@@ -10558,18 +10579,21 @@ def parser(
 
         if (
             down == 1 and
+            yds_to_go != 0 and
             ((yards_gained/yds_to_go) > 0.4) and
             is_no_play == False
         ):
             is_successful_play = True
         elif (
             down == 2 and
+            yds_to_go != 0 and
             ((yards_gained/yds_to_go) > 0.6) and
             is_no_play == False
         ):
             is_successful_play = True
         elif (
             down == 3 and
+            yds_to_go != 0 and
             ((yards_gained/yds_to_go) > 1.0) and
             is_no_play == False
         ):
@@ -10580,6 +10604,7 @@ def parser(
         # Following is done so I don't have to retroactively fix this potential bug.
         elif (
             down == 4 and
+            yds_to_go != 0 and
             ((yards_gained/yds_to_go) > 1.0) and
             is_no_play == False
         ):
@@ -10618,10 +10643,10 @@ def parser(
 
         score_differential_post = posteam_score_post - defteam_score_post
 
-        if play["teamId"] == home_team_id:
+        if play["teamId"] == home_competitor_id:
             total_home_score = posteam_score_post
             total_away_score = defteam_score_post
-        elif play["teamId"] == away_team_id:
+        elif play["teamId"] == away_competitor_id:
             total_home_score = defteam_score_post
             total_away_score = posteam_score_post
 
@@ -10656,7 +10681,7 @@ def parser(
                 "qtr": int(play["phaseQualifier"]),
                 "down": down,
                 "goal_to_go": is_goal_to_go,
-                "time": play["clock"],
+                "time": time,
                 "yrdln": yrdln,
                 "yds_to_go": yds_to_go,
                 "yds_net": yds_net,
@@ -10953,11 +10978,28 @@ def parser(
     return pbp_df, home_opening_kickoff, total_home_score, total_away_score
 
 
-def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
+def get_cfl_pbp_data(
+    fixture_id: int,
+    season: int,
+    away_team_id: int,
+    home_team_id: int,
+    # away_team_abv: str,
+    # home_team_abv: str,
+) -> pd.DataFrame:
     pbp_df = pd.DataFrame()
     pbp_df_arr = []
     quarter_df = pd.DataFrame()
-
+    team_abv_dict = {
+        1: "BC",
+        6: "CGY",
+        7: "EDM",
+        8: "HAM",
+        11: "MTL",
+        13: "OTT",
+        17: "SSK",
+        19: "TOR",
+        20: "WPG",
+    }
 
     player_name_columns = [
         "td_player_name",
@@ -11053,61 +11095,69 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
     ]
 
     played_phases = []
-    away_team_abv = ""
-    home_team_abv = ""
+    away_team_abv = team_abv_dict[away_team_id]
+    home_team_abv = team_abv_dict[home_team_id]
     home_points = 0
     away_points = 0
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4)"
         + " AppleWebKit/537.36 (KHTML, like Gecko) "
-        + "Chrome/152.0.0.0 Safari/537.36",
+        + "Chrome/153.0.0.0 Safari/537.36",
     }
+    fixture_url = (
+        "https://gsm-widgets.betstream.betgenius.com/" +
+        "v1/widget/multisportscoreboardwidget/customer/democfl_light/locale/" +
+        f"en-US/geolocale/US-OH?fixtureId={fixture_id}"
+    )
+    response = requests.get(url=fixture_url, headers=headers)
+    time.sleep(1)
+    fixture_data = json.loads(response.text)
+
+
     home_opening_kickoff = False
+    url = (
+        "https://gsm-widgets.betstream.betgenius.com/v1/widget/" +
+        "playByPlay/customer/democfl_light/locale/any/geolocale/" +
+        f"any-?fixtureId={fixture_id}"
+    )
+    response = requests.get(url=url, headers=headers)
+    time.sleep(1)
+    json_data = json.loads(response.text)
+    json_data = json_data["data"]
 
     for q in range(1, 5):
-        url = (
-            "https://gsm-widgets.betstream.betgenius.com/widget-data/"
-            + "multisportgametracker?productName=democfl_light"
-            + f"&fixtureId={fixture_id}"
-            + "&activeContent=playByPlay&sport=AmericanFootball&sportId=17&"
-            + f"competitionId=1035&isUsingBetGeniusId=true&phase=Q{q}"
-        )
-        response = requests.get(url=url, headers=headers)
-        time.sleep(1)
-        json_data = json.loads(response.text)
-        json_data = json_data["data"]
         # with open("test.json", "w+") as f:
         #     f.write(json.dumps(json_data, indent=4))
-        try:
-            played_phases = json_data["matchInfo"]["playedPhases"]
-        except Exception:
-            logging.warning(
-                f"Issue found when attempting to parse {fixture_id}. " +
-                "Attempting re-download."
-            )
-            time.sleep(15)
-            response = requests.get(url=url, headers=headers)
-            json_data = json.loads(response.text)
-            json_data = json_data["data"]
-            played_phases = json_data["matchInfo"]["playedPhases"]
+        # try:
+        #     played_phases = json_data["matchInfo"]["playedPhases"]
+        # except Exception:
+        #     logging.warning(
+        #         f"Issue found when attempting to parse {fixture_id}. " +
+        #         "Attempting re-download."
+        #     )
+        #     time.sleep(15)
+        #     response = requests.get(url=url, headers=headers)
+        #     json_data = json.loads(response.text)
+        #     json_data = json_data["data"]
+        #     played_phases = json_data["matchInfo"]["playedPhases"]
 
-        away_team_abv = json_data["matchInfo"]["awayTeam"]["details"][
-            "abbreviation"
-        ]
-        away_team_id = json_data["matchInfo"]["awayTeam"]["competitorId"]
-        home_team_abv = json_data["matchInfo"]["homeTeam"]["details"][
-            "abbreviation"
-        ]
-        home_team_id = json_data["matchInfo"]["homeTeam"]["competitorId"]
+        # away_team_abv = json_data["matchInfo"]["awayTeam"]["details"][
+        #     "abbreviation"
+        # ]
+        # away_team_id = json_data["matchInfo"]["awayTeam"]["competitorId"]
+        # home_team_abv = json_data["matchInfo"]["homeTeam"]["details"][
+        #     "abbreviation"
+        # ]
+        # home_team_id = json_data["matchInfo"]["homeTeam"]["competitorId"]
 
         # pbp_data = {}
 
-        if "Q1" in json_data["playByPlayInfo"]:
+        if "Q1" in json_data["details"]["playByPlayInfo"]:
             logging.info("Parsing Q1 play-by-play data.")
             quarter_df, home_opening_kickoff, home_points, away_points = parser(
-                pbp_data=json_data["playByPlayInfo"]["Q1"],
-                # quarter_num=1,
+                pbp_data=json_data["details"]["playByPlayInfo"]["Q1"],
+                game_details = fixture_data,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
@@ -11116,11 +11166,11 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
                 total_away_score=away_points
             )
             home_opening_kickoff= quarter_df["home_opening_kickoff"][0]
-        elif "Q2" in json_data["playByPlayInfo"]:
+        elif "Q2" in json_data["details"]["playByPlayInfo"]:
             logging.info("Parsing Q2 play-by-play data.")
             quarter_df, home_opening_kickoff, home_points, away_points = parser(
-                pbp_data=json_data["playByPlayInfo"]["Q2"],
-                # quarter_num=2,
+                pbp_data=json_data["details"]["playByPlayInfo"]["Q2"],
+                game_details = fixture_data,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
@@ -11128,11 +11178,11 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
                 total_home_score=home_points,
                 total_away_score=away_points
             )
-        elif "Q3" in json_data["playByPlayInfo"]:
+        elif "Q3" in json_data["details"]["playByPlayInfo"]:
             logging.info("Parsing Q3 play-by-play data.")
             quarter_df, home_opening_kickoff, home_points, away_points = parser(
-                pbp_data=json_data["playByPlayInfo"]["Q3"],
-                # quarter_num=3,
+                pbp_data=json_data["details"]["playByPlayInfo"]["Q3"],
+                game_details = fixture_data,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
@@ -11140,11 +11190,11 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
                 total_home_score=home_points,
                 total_away_score=away_points
             )
-        elif "Q4" in json_data["playByPlayInfo"]:
+        elif "Q4" in json_data["details"]["playByPlayInfo"]:
             logging.info("Parsing Q4 play-by-play data.")
             quarter_df, home_opening_kickoff, home_points, away_points = parser(
-                pbp_data=json_data["playByPlayInfo"]["Q4"],
-                # quarter_num=4,
+                pbp_data=json_data["details"]["playByPlayInfo"]["Q4"],
+                game_details = fixture_data,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
@@ -11152,8 +11202,10 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
                 total_home_score=home_points,
                 total_away_score=away_points
             )
-        pbp_df_arr.append(quarter_df)
-        del quarter_df
+
+        if len(json_data["details"]["playByPlayInfo"]) > 0:
+            pbp_df_arr.append(quarter_df)
+            del quarter_df
 
     if len(played_phases) > 5:
         url = (
@@ -11168,13 +11220,13 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
         json_data = json.loads(response.text)
         json_data = json_data["data"]
 
-        played_phases = json_data["matchInfo"]["playedPhases"]
+        # played_phases = json_data["matchInfo"]["playedPhases"]
 
-        if "OT" in json_data["playByPlayInfo"]:
+        if "OT" in json_data["details"]["playByPlayInfo"]:
             logging.info("Parsing OT play-by-play data.")
             quarter_df, home_opening_kickoff, home_points, away_points = parser(
-                pbp_data=json_data["playByPlayInfo"]["OT"],
-                # quarter_num=5,
+                pbp_data=json_data["details"]["playByPlayInfo"]["OT"],
+                game_details = fixture_data,
                 away_team_abv=away_team_abv,
                 home_team_abv=home_team_abv,
                 home_team_id=home_team_id,
@@ -11195,9 +11247,12 @@ def get_cfl_pbp_data(fixture_id: int, season: int) -> pd.DataFrame:
             "There is now a need to implement logic for a 2OT game."
         )
 
+    if len(pbp_df_arr) == 0:
+        return pd.DataFrame()
+
     pbp_df = pd.concat(pbp_df_arr, ignore_index=True)
-    pbp_df["away_score"] = json_data["scoreboardInfo"]["awayScore"]
-    pbp_df["home_score"] = json_data["scoreboardInfo"]["homeScore"]
+    pbp_df["away_score"] = fixture_data["data"]["details"]["awayTeam"]["score"]
+    pbp_df["home_score"] = fixture_data["data"]["details"]["homeTeam"]["score"]
 
     # player_chain = get_player_chain(
     #     season=season,
@@ -11233,6 +11288,10 @@ def get_cfl_season_pbp_data(season: int) -> pd.DataFrame:
 
     fixture_ids_arr = schedule_df["fixtureId"].to_numpy()
     season_types_arr = schedule_df["eventTypeName"].to_numpy()
+    away_team_id_arr = schedule_df["away_team_id"].to_numpy()
+    home_team_id_arr = schedule_df["home_team_id"].to_numpy()
+    # season_types_arr = schedule_df["eventTypeName"].to_numpy()
+    # season_types_arr = schedule_df["eventTypeName"].to_numpy()
     weeks_arr = schedule_df["week"].to_numpy()
     pbp_df["season"] = season
 
@@ -11245,7 +11304,12 @@ def get_cfl_season_pbp_data(season: int) -> pd.DataFrame:
 
     for i in tqdm(range(0, len(fixture_ids_arr))):
         game_id = fixture_ids_arr[i]
-        temp_df = get_cfl_pbp_data(game_id, season)
+        temp_df = get_cfl_pbp_data(
+            game_id,
+            season,
+            away_team_id_arr[i],
+            home_team_id_arr[i]
+        )
         temp_df["game_id"] = game_id
         temp_df["season_type"] = season_types_arr[i]
         temp_df["week"] = weeks_arr[i]
